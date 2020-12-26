@@ -20,17 +20,6 @@
 *.mod
 *.smod
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
 # Visual Studio stuff
 .vs/
 .vscode/
