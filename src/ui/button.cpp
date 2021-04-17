@@ -29,13 +29,16 @@ namespace ui {
 		// Create margin and account for aspect ratio
 		rect = Rectangle(0.15f / aspectRatio, 0.15f, 1.0f - 0.15f / aspectRatio, 0.85f, rect);
 
-		glBegin(GL_QUADS);
+		glBegin(GL_TRIANGLES);
 		if (hovered) glVertexAttrib3f(1, btnHoveredColor.red, btnHoveredColor.green, btnHoveredColor.blue);
 		else glVertexAttrib3f(1, btnBackgroundColor.red, btnBackgroundColor.green, btnBackgroundColor.blue);
 		glVertex2f(rect.xMin, rect.yMax);
 		glVertex2f(rect.xMin, rect.yMin);
 		glVertex2f(rect.xMax, rect.yMin);
+
 		glVertex2f(rect.xMax, rect.yMax);
+		glVertex2f(rect.xMin, rect.yMax);
+		glVertex2f(rect.xMax, rect.yMin);
 		glEnd();
 
 		fontRendering::drawText(label, (rect.xMin + rect.xMax) / 2, (rect.yMin + rect.yMax) / 2, rect.GetWidth() * 0.35f, btnLabelColor, true, true);

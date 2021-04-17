@@ -16,19 +16,27 @@
 #include "../universe/mass_body.h"
 #include "baseModels/sphere.h"
 #include "baseModels/star_sphere.h"
+#include "../ui/ui_manager.h"
 #include "../ui/panel.h"
-#include "../ui/font_renderer.h"
 #include "../ui/text_field.h"
+#include "../ui/font_renderer.h"
 
 namespace renderer {
-	// Default shader
+	// Default shader (used to render objects in the world with or without lighting)
 	struct Shader {
 		GLuint ProgramID;
 		GLuint MatrixUniformID;
 		GLuint ModelMatrixUniformID;
 		GLuint ViewMatrixUniformID;
+		GLuint UnlitUniformID;
 		GLuint LightPosUniformID;
 		GLuint ModelColorUniformID;
+
+		// Shadow marching Uniforms
+		GLuint OccluderCountUniformID;
+		GLuint OccluderPositionsUniformIDs[MAX_OCCLUDERS];
+		GLuint OccluderRadiusesUniformIDs[MAX_OCCLUDERS];
+		GLuint LightRadiusUniformID;
 	};
 
 	// Shader used to render star spheres
@@ -39,7 +47,7 @@ namespace renderer {
 		GLuint ViewMatrixUniformID;
 	};
 
-	// Shader used to render overlays
+	// Shader used to render overlays (currently just the focused-body indicator)
 	struct OverlayShader {
 		GLuint ProgramID;
 		GLuint CamRightUniformID;
@@ -62,18 +70,18 @@ namespace renderer {
 
 		unsigned int focusedBodyIndex;
 		glm::vec3 offset, deltaOffset;
-		glm::vec2 orbitAngles, deltaOrbitAngles;
 		float distance; // The distance between the camera and the focused position
 
 		int windowWidth, windowHeight;
 
 		bool isOrbiting;
 		bool isBeingDragged;
-		int startMouseX;
-		int startMouseY;
+		int startMouseX, startMouseY;
+		int lastMouseX, lastMouseY;
 
 		// Stuff that is computed for every frame
 		glm::vec3 Position;
+		glm::vec3 RelativeOrbitPosition;
 		glm::vec3 FocusedPosition;
 		glm::mat4 ViewMatrix;
 		glm::mat4 StationaryViewMatrix; // View Matrix without any translation
@@ -95,17 +103,18 @@ namespace renderer {
 	void renderModel(RenderModel model, glm::mat4 projectionMatrix, glm::mat4 viewMatrix, glm::mat4 modelMatrix, Color color);
 	void renderBody(MassBody body, glm::mat4 projectionMatrix);
 	void renderStars(glm::mat4 projectionMatrix);
+	void renderGrid(glm::mat4 projectionMatrix, glm::mat4 viewMatrix);
 	void renderFocusOverlay(glm::mat4 projectionMatrix);
 	void renderUI();
 	void renderAll();
 	void preRender();
 	void postRender(double deltaTime);
 	void mouseDown(float mouseX, float mouseY, int button); // mouseX and mouseY are in OpenGL Screen-space [-1;1]
-	void loadUniverse(Universe* universe);
-	void unloadUniverse();
+	void setUniverse(Universe* universe);
 	void terminate();
 
 	glm::vec3 CreateMouseRay();
+	glm::vec3 PlaneIntersection(glm::vec3 planePoint, glm::vec3 planeNormal, glm::vec3 linePoint, glm::vec3 lineDirection);
 
 	GLFWwindow* getWindow();
 

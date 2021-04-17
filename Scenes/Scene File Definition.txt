@@ -1,0 +1,20 @@
+--- 3D Gravity simulator scene file definition 1.0 ---
+This type of file stores a universe preset that can be loaded by the Gravity simulator.
+The file format definition might change in the future
+------------------------------------------------------
+
+First 8 bytes: default scene configuration
+- 4 bytes: default G-constant value (float)
+- 4 bytes: default timescale (float)
+
+Following bytes: scene bodies. (no padding between each body)
+For each body (35 bytes): 
+- 3 bytes: body color (3x unsigned byte for R, G, B values)
+- 4 bytes: body mass (float)
+- 4 bytes: body size (float)
+- 4 bytes: body X position (float)
+- 4 bytes: body Y position (float)
+- 4 bytes: body Z position (float)
+- 4 bytes: body X velocity (float)
+- 4 bytes: body Y velocity (float)
+- 4 bytes: body Z velocity (float)

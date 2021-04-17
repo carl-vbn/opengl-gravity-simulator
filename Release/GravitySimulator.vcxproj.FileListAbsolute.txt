@@ -1,1 +1,2 @@
 E:\Projects\OpenGL\GravitySimulator\Release\GravitySimulator.exe
+F:\_EDriveContent\Projects\OpenGL\GravitySimulator\Release\GravitySimulator.exe

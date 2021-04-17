@@ -97,7 +97,7 @@ namespace ui {
 
 			glBindTexture(GL_TEXTURE_2D, FontTextureID);
 			glUniform1i(renderer::uiShader.UseTextureUniformID, 1);
-			glBegin(GL_QUADS);
+			glBegin(GL_QUADS); // WARNING GL_QUADS IS DEPREACTED AND SHOULD NOT BE USED. TODO: Use GL_TRIANGLES instead
 			glVertexAttrib3d(1, color.red, color.green, color.blue);
 
 			for (int c = 0; c < strLength; c++) {

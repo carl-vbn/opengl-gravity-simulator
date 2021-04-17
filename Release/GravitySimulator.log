@@ -1,52 +1,37 @@
-﻿  button.cpp
-  color.cpp
-  checkbox.cpp
-  label.cpp
-  rectangle.cpp
-  container.cpp
-  component.cpp
-  panel.cpp
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(27,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(58,121): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(61,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(80,21): warning C4018: '<': signed/unsigned mismatch
-  font_renderer.cpp
-  text_field.cpp
-  mass_body.cpp
-  sphere.cpp
-E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\sphere.cpp(11,25): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\sphere.cpp(12,25): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  star_sphere.cpp
-E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\star_sphere.cpp(13,25): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\star_sphere.cpp(14,25): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\star_sphere.cpp(70,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\star_sphere.cpp(71,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  main.cpp
-  cube.cpp
-  renderModel.cpp
-  universe.cpp
-E:\Projects\OpenGL\GravitySimulator\src\universe\universe.cpp(66,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-  renderer.cpp
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(118,69): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(384,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(385,40): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(385,32): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(393,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(393,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(401,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(401,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(409,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(409,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(429,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(443,75): warning C4305: 'argument': truncation from 'double' to 'float'
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(640,20): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(662,173): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(662,24): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(662,16): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+﻿  renderer.cpp
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(121,69): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(420,21): warning C4018: '<': signed/unsigned mismatch
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(421,40): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(421,32): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(429,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(429,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(437,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(437,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(445,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(445,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(465,20): warning C4018: '<': signed/unsigned mismatch
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(533,55): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(583,20): warning C4018: '<': signed/unsigned mismatch
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(669,14): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(676,23): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(687,24): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(687,15): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(692,24): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(692,15): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(732,20): warning C4018: '<': signed/unsigned mismatch
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(754,173): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(754,24): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(754,16): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(766,142): warning C4305: 'argument': truncation from 'double' to 'T'
+          with
+          [
+              T=float
+          ]
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  Previous IPDB not found, fall back to full compilation.
-  All 977 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  23 of 1161 functions ( 2.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    71 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
 glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'E:\Projects\OpenGL\GravitySimulator\Release\vc120.pdb'; linking object as if no debug info
   GravitySimulator.vcxproj -> E:\Projects\OpenGL\GravitySimulator\Release\GravitySimulator.exe

@@ -1,5 +1,4 @@
 #include "star_sphere.h"
-#include "constants.h"
 
 #include <iostream>
 
@@ -10,8 +9,8 @@ StarSphere::StarSphere() {
 
     for (int i = 0; i < resolution / 2; i++) {
         for (int j = 0; j < resolution; j++) {
-            float iRads = (float)i / resolution * TWO_PI;
-            float jRads = (float)j / resolution * TWO_PI;
+            float iRads = (float)i / resolution * glm::two_pi<float>();
+            float jRads = (float)j / resolution * glm::two_pi<float>();
 
             float x = std::sin(jRads) * std::sin(iRads);
             float y = std::cos(iRads);
@@ -67,8 +66,8 @@ StarSphere::StarSphere() {
         normals[i] = normalizedVertexPos * glm::vec3(-1, -1, -1); // Pointing inwards
 
 		// Texture mapping
-		float u = 0.5 + std::atan2f(normalizedVertexPos.x, normalizedVertexPos.z) / TWO_PI;
-		float v = 0.5 - std::asinf(normalizedVertexPos.y) / PI;
+		float u = 0.5 + std::atan2f(normalizedVertexPos.x, normalizedVertexPos.z) / glm::two_pi<float>();
+		float v = 0.5 - std::asinf(normalizedVertexPos.y) / glm::pi<float>();
     }
 
     init();

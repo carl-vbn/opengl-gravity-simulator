@@ -31,6 +31,8 @@ namespace ui {
 				*out_containerBounds = containerBounds;
 				return container;
 			}
+
+			yOffset -= containerBounds.GetHeight();
 		}
 
 		return nullptr;
@@ -39,13 +41,15 @@ namespace ui {
 	void Panel::draw() {
 		float cellHeight = bounds.GetHeight() / (totalVerticalCellSize + 1); // We add 1 to make up for the panel head
 
-		glBegin(GL_QUADS);
+		glBegin(GL_TRIANGLES);
 		// Background
 		glVertexAttrib3f(1, backgroundColor.red, backgroundColor.green, backgroundColor.blue);
 		glVertex2f(bounds.xMin, bounds.yMin);
 		glVertex2f(bounds.xMax, bounds.yMin);
 		glVertex2f(bounds.xMax, bounds.yMax);
 		glVertex2f(bounds.xMin, bounds.yMax);
+		glVertex2f(bounds.xMin, bounds.yMin);
+		glVertex2f(bounds.xMax, bounds.yMax);
 
 		// Head
 		glVertexAttrib3f(1, headColor.red, headColor.green, headColor.blue);
@@ -53,6 +57,8 @@ namespace ui {
 		glVertex2f(bounds.xMin, bounds.yMax - cellHeight);
 		glVertex2f(bounds.xMax, bounds.yMax - cellHeight);
 		glVertex2f(bounds.xMax, bounds.yMax);
+		glVertex2f(bounds.xMin, bounds.yMax);
+		glVertex2f(bounds.xMax, bounds.yMax - cellHeight);
 		glEnd();
 
 		fontRendering::drawText(label, (bounds.xMin + bounds.xMax) / 2, (2 * bounds.yMax - cellHeight) / 2, bounds.GetWidth() * 0.5, PANEL_TITLE_COLOR, true, true);
@@ -79,7 +85,10 @@ namespace ui {
 
 		for (int i = 0; i < containers.size(); i++) {
 			Container* container = &containers.at(i);
-			container->onMouseMoved(Rectangle(bounds.xMin, yOffset - container->GetVerticalCellSize() * cellHeight, bounds.xMax, yOffset), mouseX, mouseY);
+			Rectangle containerBounds = Rectangle(bounds.xMin, yOffset - container->GetVerticalCellSize() * cellHeight, bounds.xMax, yOffset);
+			container->onMouseMoved(containerBounds, mouseX, mouseY);
+			
+			yOffset -= containerBounds.GetHeight();
 		}
 	}
 

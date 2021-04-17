@@ -13,4 +13,6 @@ struct Color {
 
 	Color();
 	Color(float red, float green, float blue);
+	Color(unsigned int hex);
+	int toHex();
 };

@@ -155,6 +155,7 @@
     <ClCompile Include="src\ui\panel.cpp" />
     <ClCompile Include="src\ui\font_renderer.cpp" />
     <ClCompile Include="src\ui\text_field.cpp" />
+    <ClCompile Include="src\ui\ui_manager.cpp" />
     <ClCompile Include="src\universe\mass_body.cpp" />
     <ClCompile Include="src\rendering\baseModels\sphere.cpp" />
     <ClCompile Include="src\rendering\baseModels\cube.cpp">
@@ -166,6 +167,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\universe\scene_loader.cpp" />
     <ClCompile Include="src\universe\universe.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
@@ -184,11 +186,11 @@
     <ClInclude Include="src\ui\rectangle.h" />
     <ClInclude Include="src\ui\container.h" />
     <ClInclude Include="src\ui\component.h" />
-    <ClInclude Include="Dependencies\include\constants.h" />
     <ClInclude Include="Dependencies\include\stb_image.h" />
     <ClInclude Include="src\ui\panel.h" />
     <ClInclude Include="src\ui\font_renderer.h" />
     <ClInclude Include="src\ui\text_field.h" />
+    <ClInclude Include="src\ui\ui_manager.h" />
     <ClInclude Include="src\ui\ui_palette.h" />
     <ClInclude Include="src\universe\mass_body.h" />
     <ClInclude Include="src\rendering\baseModels\sphere.h" />
@@ -201,6 +203,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="src\universe\scene_loader.h" />
     <ClInclude Include="src\universe\universe.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>

@@ -1,20 +1,35 @@
 #include "universe.h"
-#include "constants.h"
 #include <iostream>
 
 Universe::Universe() {
-	std::cout << "Universe construction" << std::endl;
-
 	Universe::lightPosition = glm::vec3(4, 4, 4);
 	Universe::timeScale = 1.0f;
+	Universe::gConstant = 0.0001;
 }
 
-std::vector<MassBody>* Universe::GetBodies() {
+Universe::~Universe() {
+	for (int i = 0; i < Universe::bodies.size(); i++) {
+		delete bodies.at(i);
+	}
+}
+
+std::vector<MassBody*>* Universe::GetBodies() {
 	return &bodies;
 }
 
-void Universe::AddBody(MassBody body) {
+void Universe::AddBody(MassBody* body) {
 	bodies.push_back(body);
+
+	// Re-assign occluders
+	for (int i = 0; i < bodies.size(); i++) {
+		bodies.at(i)->occluders.clear();
+		for (int j = 0; j < bodies.size(); j++) {
+			if (i == j) continue; // A body should never been its own occluder
+
+			bodies.at(i)->occluders.push_back(bodies.at(j));
+			if (bodies.at(i)->occluders.size() >= MAX_OCCLUDERS) break;
+		}
+	}
 }
 
 Universe::RaycastHit::RaycastHit(bool hit, MassBody* hitBody, unsigned int hitBodyIndex, glm::vec3 hitPosition) {
@@ -28,12 +43,12 @@ Universe::RaycastHit Universe::Raycast(glm::vec3 startPos, glm::vec3 dir) {
 	RaycastHit closestHit(false, nullptr, 0, glm::vec3());
 
 	for (unsigned int i = 0; i < bodies.size(); i++) {
-		MassBody* body = &bodies.at(i);
+		MassBody* body = bodies.at(i);
 		float t =  glm::dot(body->position-startPos, dir);
 		glm::vec3 p = startPos + dir*t;
 
 		float y = glm::length(body->position-p);
-		float radius = body->size;
+		float radius = body->radius;
 		if (y < radius) {
 			float x = std::sqrtf(radius * radius - y * y);
 			float t1 = t - x;
@@ -50,32 +65,38 @@ Universe::RaycastHit Universe::Raycast(glm::vec3 startPos, glm::vec3 dir) {
 }
 
 void Universe::tick(double deltaTime) {
-	if (timeScale > 0) updateBodies(deltaTime*timeScale);
+	if (timeScale > 0 && deltaTime < 0.05F) updateBodies(deltaTime*timeScale); // If deltaTime is too high, don't update the bodies as the large deltaTime will distort orbits
 }
 
 void Universe::updateBodies(double deltaTime) {
 	// Step 1: update all velocities
 	for (unsigned int i = 0; i < bodies.size(); i++) {
-		MassBody body = bodies.at(i);
+		MassBody* body = bodies.at(i);
 
-		glm::vec3 totalGravitationalForce = glm::vec3(0);
-		// Loop through all bodies in the universe to calculate their gravitational pull on the object (TODO: Ignore very far away objects for better performance)
-		for (unsigned int j = 0; j < bodies.size(); j++) {
-			if (i == j) continue; // No need to calculate the gravitational pull of a body on itself as it will always be 0.
-			MassBody otherBody = bodies.at(j);
-			float force = GRAVITATIONAL_CONSTANT * body.mass * otherBody.mass * std::pow(glm::distance(body.position, otherBody.position), 2);
-			glm::vec3 forceDirection = glm::normalize(otherBody.position - body.position);
-			
-			totalGravitationalForce += forceDirection*force;
+		if (body->affectedByGravity) {
+			glm::vec3 totalGravitationalForce = glm::vec3(0);
+
+			// Loop through all bodies in the universe to calculate their gravitational pull on the object (TODO: Ignore very far away objects for better performance)
+			for (unsigned int j = 0; j < bodies.size(); j++) {
+				if (i == j) continue; // No need to calculate the gravitational pull of a body on itself as it will always be 0.
+				MassBody* otherBody = bodies.at(j);
+
+				if (!otherBody->affectsOthers) continue; // Ignore this one
+
+				float force = gConstant * body->mass * otherBody->mass / std::pow(glm::distance(body->position, otherBody->position), 2);
+				glm::vec3 forceDirection = glm::normalize(otherBody->position - body->position);
+
+				totalGravitationalForce += forceDirection * force;
+			}
+
+			// Update the velocity of the object by adding the acceleration, which is the force divided by the object's mass. (and multiply it all by deltaTime)
+			bodies.at(i)->velocity += totalGravitationalForce / body->mass * (float)deltaTime;
 		}
-
-		// Update the velocity of the object by adding the acceleration, which is the force divided by the object's mass. (and multiply it all by deltaTime)
-		(&bodies.at(i))->velocity += totalGravitationalForce / body.mass * (float)deltaTime;
 	}
 
 	// Step 2: update all positions
 	for (unsigned int i = 0; i < bodies.size(); i++) {
-		MassBody* body = &bodies.at(i);
+		MassBody* body = bodies.at(i);
 		body->position += body->velocity * (float)deltaTime;
 	}
 }

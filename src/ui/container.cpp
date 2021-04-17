@@ -1,6 +1,8 @@
 #include "container.h"
 #include "GL/glew.h"
 
+#include <iostream>
+
 namespace ui {
 	Container::Container(std::string label) {
 		this->label = label;

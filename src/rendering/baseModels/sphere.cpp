@@ -1,5 +1,4 @@
 #include "sphere.h"
-#include "constants.h"
 
 #include <iostream>
 
@@ -8,8 +7,8 @@ Sphere::Sphere(int resolution, float radius) {
 
     for (int i = 0; i < resolution / 2; i++) {
         for (int j = 0; j < resolution; j++) {
-            float iRads = (float)i / resolution * TWO_PI;
-            float jRads = (float)j / resolution * TWO_PI;
+            float iRads = (float)i / resolution * glm::two_pi<float>();
+            float jRads = (float)j / resolution * glm::two_pi<float>();
 
             float x = std::sin(jRads) * std::sin(iRads);
             float y = std::cos(iRads);

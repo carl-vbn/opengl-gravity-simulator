@@ -1,7 +1,6 @@
 #version 330 core
 
 // FOCUS OVERLAY FRAGMENT SHADER
-// WIP
 
 in vec2 uv;
 out vec4 color;
@@ -11,7 +10,7 @@ uniform vec2 OverlaySize;
 
 void main() {
     float size = sin(4.0 * Time) * 0.05 + 0.95;
-    float width = 0.005 / OverlaySize.x;
+    float width = 0.005 / OverlaySize.x * 1.5F;
 
     float b = 0.0;
 

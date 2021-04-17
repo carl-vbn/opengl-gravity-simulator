@@ -21,13 +21,15 @@ namespace ui {
 		Rectangle outerRect = Rectangle(0.2f / aspectRatio, 0.2f, 0.8f / aspectRatio, 0.8f, rect);
 		Rectangle innerRect = Rectangle(0.25f / aspectRatio, 0.25f, 0.75f / aspectRatio, 0.75f, rect);
 
-		glBegin(GL_QUADS);
+		glBegin(GL_TRIANGLES);
 
 		glVertexAttrib3f(1, borderColor.red, borderColor.green, borderColor.blue);
 		glVertex2f(outerRect.xMin, outerRect.yMax);
 		glVertex2f(outerRect.xMin, outerRect.yMin);
 		glVertex2f(outerRect.xMax, outerRect.yMin);
 		glVertex2f(outerRect.xMax, outerRect.yMax);
+		glVertex2f(outerRect.xMin, outerRect.yMax);
+		glVertex2f(outerRect.xMax, outerRect.yMin);
 
 		if (checked) glVertexAttrib3f(1, checkedColor.red, checkedColor.green, checkedColor.blue);
 		else glVertexAttrib3f(1, uncheckedColor.red, uncheckedColor.green, uncheckedColor.blue);
@@ -35,6 +37,8 @@ namespace ui {
 		glVertex2f(innerRect.xMin, innerRect.yMin);
 		glVertex2f(innerRect.xMax, innerRect.yMin);
 		glVertex2f(innerRect.xMax, innerRect.yMax);
+		glVertex2f(innerRect.xMin, innerRect.yMax);
+		glVertex2f(innerRect.xMax, innerRect.yMin);
 
 		glEnd();
 
@@ -42,6 +46,22 @@ namespace ui {
 	}
 
 	void CheckBoxComponent::onMouseDown(float mouseX, float mouseY, int button) {
-		if (button == GLFW_MOUSE_BUTTON_LEFT) checked = !checked;
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			checked = !checked;
+
+			if (this->toggleCallback != NULL) this->toggleCallback(checked);
+		}
+	}
+
+	void CheckBoxComponent::setChecked(bool newChecked) {
+		this->checked = newChecked;
+	}
+
+	bool CheckBoxComponent::isChecked() {
+		return this->checked;
+	}
+
+	void CheckBoxComponent::setToggleCallback(std::function<void(bool)> callback) {
+		this->toggleCallback = callback;
 	}
 }
