@@ -24,6 +24,9 @@ namespace ui {
 		Container* GetContainerAt(float x, float y, Rectangle* out_containerBounds);
 		std::vector<Container>* GetContainers();
 
+		std::string GetLabel();
+		void SetLabel(std::string newLabel);
+
 		void draw();
 		void onMouseDown(float mouseX, float mouseY, int button);
 		void onMouseMoved(float mouseX, float mouseY);

@@ -20,7 +20,7 @@ int main(void)
 
 	GLFWwindow* window = renderer::getWindow();
 
-	Universe* universe = ui::generateUniverse(0); //loadScene("E:\\Projects\\OpenGL\\GravitySimulator\\Scenes\\DoubleOrbits.scene");
+	Universe* universe = loadScene("Scenes\\default.scene");
 
 	renderer::setUniverse(universe);
 	ui::setupUIPanels();

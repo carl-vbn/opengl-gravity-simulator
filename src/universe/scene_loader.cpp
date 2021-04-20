@@ -6,6 +6,11 @@
 Universe* loadScene(const char* filePath) {
 	std::ifstream infile(filePath);
 
+	if (!infile.good()) {
+		std::cout << "[ERROR] File '" << filePath << "' does not exist." << std::endl;
+		return nullptr;
+	}
+
 	//get length of file
 	infile.seekg(0, std::ios::end);
 	size_t length = infile.tellg();
@@ -41,7 +46,6 @@ Universe* loadScene(const char* filePath) {
 	}
 
 	delete[] buffer;
-
 
 	return universe;
 }

@@ -151,5 +151,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="fonts\Comfortaa.fnt" />
+    <None Include="shaders\default\fragmentShader.glsl" />
+    <None Include="shaders\default\vertexShader.glsl" />
+    <None Include="shaders\postprocessing\vertexShader.glsl" />
+    <None Include="shaders\postprocessing\fragmentShader.glsl" />
+    <None Include="shaders\ui\fragmentShader.glsl" />
+    <None Include="shaders\ui\vertexShader.glsl" />
+    <None Include="shaders\stars\fragmentShader.glsl" />
+    <None Include="shaders\stars\vertexShader.glsl" />
+    <None Include="shaders\overlay\fragmentShader.glsl" />
+    <None Include="shaders\overlay\vertexShader.glsl" />
   </ItemGroup>
 </Project>

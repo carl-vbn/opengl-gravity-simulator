@@ -2,8 +2,10 @@
 #include "../universe/scene_loader.h"
 
 namespace ui {
+	Panel* objectPanel;
 	BodyPropertyComponents bodyPropertyComponents;
 	SceneSettingsComponents sceneSettingsComponents;
+	MassBody* selectedBody;
 
 	// DEPRECATED FUNCTION TODO: REMOVE (just left here in case i need to copy something from it)
 	Universe* generateUniverse(unsigned int id) {
@@ -69,15 +71,16 @@ namespace ui {
 		bodyPropertyComponents.btnApplyProperties = new ButtonComponent("Apply", []() {
 			Universe* universe = renderer::loadedUniverse;
 			if (universe != nullptr) {
-				MassBody* focusedBody = universe->GetBodies()->at(renderer::camera.focusedBodyIndex);
-				focusedBody->mass = std::stof(bodyPropertyComponents.massInput->getText());
-				focusedBody->radius = std::stof(bodyPropertyComponents.sizeInput->getText());
+				std::string massInput = bodyPropertyComponents.massInput->getText();
+				std::string sizeInput = bodyPropertyComponents.sizeInput->getText();
+				if (massInput.length() > 0) selectedBody->mass = std::stof(massInput);
+				if (sizeInput.length() > 0) selectedBody->radius = std::stof(sizeInput);
 
 				std::stringstream hexStream;
 				unsigned int hexRGB;
 				hexStream << std::hex << bodyPropertyComponents.colorInput->getText();
 				hexStream >> hexRGB;
-				focusedBody->color = Color(hexRGB);
+				selectedBody->color = Color(hexRGB);
 			}
 		});
 
@@ -90,14 +93,14 @@ namespace ui {
 		bodyPropertyComponents.affectedByGravityCB->setToggleCallback([](bool checked) {
 			Universe* universe = renderer::loadedUniverse;
 			if (universe != nullptr) {
-				universe->GetBodies()->at(renderer::camera.focusedBodyIndex)->affectedByGravity = checked;
+				selectedBody->affectedByGravity = checked;
 			}
 		});
 
 		bodyPropertyComponents.affectsOthersCB->setToggleCallback([](bool checked) {
 			Universe* universe = renderer::loadedUniverse;
 			if (universe != nullptr) {
-				universe->GetBodies()->at(renderer::camera.focusedBodyIndex)->affectsOthers = checked;
+				selectedBody->affectsOthers = checked;
 			}
 		});
 
@@ -119,8 +122,11 @@ namespace ui {
 		sceneSettingsComponents.loadButton = new ButtonComponent("Load", []() {
 			std::string sceneName = sceneSettingsComponents.sceneNameInput->getText();
 			if (sceneName.length() > 0) {
-				if (renderer::loadedUniverse != nullptr) delete renderer::loadedUniverse;
-				renderer::setUniverse(loadScene(std::string("Scenes\\" + sceneName + ".scene").c_str()));
+				Universe* universe = loadScene(std::string("Scenes\\" + sceneName + ".scene").c_str());
+				if (universe != nullptr) {
+					if (renderer::loadedUniverse != nullptr) delete renderer::loadedUniverse;
+					renderer::setUniverse(universe);
+				}
 			}
 		});
 
@@ -144,13 +150,13 @@ namespace ui {
 		sceneSettingsContainer.AddComponent(sceneSettingsComponents.saveButton);
 		sceneSettingsContainer.AddComponent(sceneSettingsComponents.loadButton);
 
-		Panel objectPanel = Panel("Object", Rectangle(0.8f, 0.5f, 0.99f, 0.98f, Rectangle(-1.0f, -1.0f, 1.0f, 1.0f)));
-		objectPanel.AddContainer(bodyPropertiesContainer);
-		objectPanel.AddContainer(gravitySettingsContainer);
+		objectPanel = new Panel("Object", Rectangle(0.8f, 0.5f, 0.99f, 0.98f, Rectangle(-1.0f, -1.0f, 1.0f, 1.0f)));
+		objectPanel->AddContainer(bodyPropertiesContainer);
+		objectPanel->AddContainer(gravitySettingsContainer);
 
-		Panel universePanel = Panel("Scene settings", Rectangle(0.02f, 0.02f, 0.2f, 0.5f, Rectangle(-1.0f, -1.0f, 1.0f, 1.0f)));
-		universePanel.AddContainer(universeSettingsContainer);
-		universePanel.AddContainer(sceneSettingsContainer);
+		Panel* universePanel = new Panel("Scene settings", Rectangle(0.02f, 0.02f, 0.2f, 0.5f, Rectangle(-1.0f, -1.0f, 1.0f, 1.0f)));
+		universePanel->AddContainer(universeSettingsContainer);
+		universePanel->AddContainer(sceneSettingsContainer);
 
 		renderer::uiPanels.push_back(objectPanel);
 		renderer::uiPanels.push_back(universePanel);
@@ -161,16 +167,22 @@ namespace ui {
 	// Delete all components from memory
 	void disposeUI() {
 		for (unsigned int panelIndex = 0; panelIndex < renderer::uiPanels.size(); panelIndex++) {
-			for (unsigned int containerIndex = 0; containerIndex < renderer::uiPanels.at(panelIndex).GetContainers()->size(); containerIndex++) {
-				std::vector<Component*>* components = renderer::uiPanels.at(panelIndex).GetContainers()->at(containerIndex).GetComponents();
+			for (unsigned int containerIndex = 0; containerIndex < renderer::uiPanels.at(panelIndex)->GetContainers()->size(); containerIndex++) {
+				std::vector<Component*>* components = renderer::uiPanels.at(panelIndex)->GetContainers()->at(containerIndex).GetComponents();
 				for (unsigned int i = 0; i < components->size(); i++) {
 					delete components->at(i);
 				}
 			}
+
+			delete renderer::uiPanels.at(panelIndex);
 		}
 	}
 
-	void showBodyProperties(MassBody* body) {
+	void showBodyProperties(MassBody* body, std::string label) {
+		selectedBody = body;
+
+		objectPanel->SetLabel(label);
+
 		std::string massStr = std::to_string(body->mass);
 		std::string sizeStr = std::to_string(body->radius);
 
@@ -186,6 +198,5 @@ namespace ui {
 		std::stringstream colorHexStr;
 		colorHexStr << std::hex << body->color.toHex();
 		bodyPropertyComponents.colorInput->setText(colorHexStr.str());
-			
 	}
 }

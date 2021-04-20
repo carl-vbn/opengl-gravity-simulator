@@ -13,6 +13,7 @@ class Universe
 private:
 	glm::vec3 lightPosition;
 	std::vector<MassBody*> bodies;
+	unsigned int emissiveBodyIndex;
 
 	void updateBodies(double deltaTime); // Update velocities and positions of all bodies in the universe
 public:
@@ -32,8 +33,12 @@ public:
 	float gConstant;
 
 	std::vector<MassBody*>* GetBodies();
+	void AssignOccluders();
 	void AddBody(MassBody* body);
+	void SetEmissiveBody(unsigned int emittingBodyIndex);
 	RaycastHit Raycast(glm::vec3 startPos, glm::vec3 dir);
+	unsigned int GetEmissiveBodyIndex();
+	MassBody* GetEmissiveBody();
 	
 	void tick(double deltaTime);
 };

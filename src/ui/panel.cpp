@@ -99,4 +99,11 @@ namespace ui {
 	std::vector<Container>* Panel::GetContainers() {
 		return &containers;
 	}
+
+	std::string Panel::GetLabel() {
+		return label;
+	}
+	void Panel::SetLabel(std::string newLabel) {
+		this->label = newLabel;
+	}
 }

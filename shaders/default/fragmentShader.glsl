@@ -10,12 +10,15 @@ in vec3 LightDirection_cameraspace;
 in float visibility;
 
 // Ouput data
-out vec3 color;
+layout(location = 0) out vec3 color;
+layout(location = 1) out vec3 emission;
 
 // Values that stay constant for the whole mesh.
 uniform mat4 MV;
 uniform bool Unlit;
+uniform bool Emissive;
 uniform vec3 LightPosition_worldspace;
+uniform vec3 LightColor;
 uniform vec3 ModelColor;
 
 // For shadow raymarching. An occluder is a body that can cast a shadow on the currently rendered object.
@@ -42,7 +45,6 @@ void main() {
 		color = ModelColor * visibility;
 	} else {
 		// Light emission properties
-		vec3 LightColor = vec3(1, 1, 1);
 		float LightPower = 25.0f;
 
 		// Material properties
@@ -94,8 +96,12 @@ void main() {
 		}
 
 		color =
-			(max(MaterialDiffuseColor * cosTheta * (1.0 - occlusion), MaterialAmbientColor) // Diffuse, shadow and ambient
+			(max(MaterialDiffuseColor * LightColor * cosTheta * (1.0 - occlusion), MaterialAmbientColor) // Diffuse, shadow and ambient
 			+ MaterialSpecularColor * LightColor * LightPower * pow(cosAlpha, 5) / (distance * distance)) // Specular
 			* visibility;
+	}
+
+	if (Emissive) {
+		emission = ModelColor;
 	}
 }

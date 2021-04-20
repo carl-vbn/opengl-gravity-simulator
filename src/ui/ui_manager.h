@@ -31,11 +31,14 @@ namespace ui {
 		ButtonComponent* loadButton;
 	};
 
+	extern Panel* objectPanel;
+
 	extern BodyPropertyComponents bodyPropertyComponents;
 	extern SceneSettingsComponents sceneSettingsComponents;
+	extern MassBody* selectedBody; // Can be different from the focused body (currently just during the spawn process)
 
 	void setupUIPanels();
-	void showBodyProperties(MassBody* body);
+	void showBodyProperties(MassBody* body, std::string label="Selected body");
 
 	Universe* generateUniverse(unsigned int id); // Depreacated and should be removed
 

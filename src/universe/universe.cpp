@@ -5,6 +5,7 @@ Universe::Universe() {
 	Universe::lightPosition = glm::vec3(4, 4, 4);
 	Universe::timeScale = 1.0f;
 	Universe::gConstant = 0.0001;
+	Universe::emissiveBodyIndex = 0;
 }
 
 Universe::~Universe() {
@@ -17,19 +18,40 @@ std::vector<MassBody*>* Universe::GetBodies() {
 	return &bodies;
 }
 
-void Universe::AddBody(MassBody* body) {
-	bodies.push_back(body);
-
-	// Re-assign occluders
+void Universe::AssignOccluders() {
 	for (int i = 0; i < bodies.size(); i++) {
 		bodies.at(i)->occluders.clear();
+
 		for (int j = 0; j < bodies.size(); j++) {
-			if (i == j) continue; // A body should never been its own occluder
+			if (i == j || j == emissiveBodyIndex) continue; // A body should never been its own occluder, nor should the light source been an occluder
 
 			bodies.at(i)->occluders.push_back(bodies.at(j));
 			if (bodies.at(i)->occluders.size() >= MAX_OCCLUDERS) break;
 		}
 	}
+}
+
+void Universe::AddBody(MassBody* body) {
+	bodies.push_back(body);
+
+	// Re-assign occluders
+	AssignOccluders();
+}
+
+void Universe::SetEmissiveBody(unsigned int index) {
+	emissiveBodyIndex = index;
+
+	// Re-assign occluders
+	AssignOccluders();
+
+}
+
+unsigned int Universe::GetEmissiveBodyIndex() {
+	return emissiveBodyIndex;
+}
+
+MassBody* Universe::GetEmissiveBody() {
+	return bodies.at(emissiveBodyIndex);
 }
 
 Universe::RaycastHit::RaycastHit(bool hit, MassBody* hitBody, unsigned int hitBodyIndex, glm::vec3 hitPosition) {

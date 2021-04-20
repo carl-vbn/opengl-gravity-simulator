@@ -2,11 +2,19 @@
 
 Universe* renderer::loadedUniverse;
 GLFWwindow* renderer::window;
+
 renderer::Shader renderer::shader;
 renderer::StarShader renderer::starShader;
 renderer::OverlayShader renderer::overlayShader;
 renderer::UIShader renderer::uiShader;
+renderer::PostProcessingShader renderer::postProcessingShader;
+
 renderer::Camera renderer::camera;
+
+GLuint renderer::FramebufferID;
+GLuint renderer::ColorBufferTextureID;
+GLuint renderer::EmissionBufferTextureID;
+GLuint renderer::rbo;
 
 int renderer::windowWidth;
 int renderer::windowHeight;
@@ -14,7 +22,7 @@ int renderer::windowHeight;
 RenderModel* renderer::bodyLODModels;
 StarSphere* renderer::starSphereModel;
 
-std::vector<ui::Panel> renderer::uiPanels;
+std::vector<ui::Panel*> renderer::uiPanels;
 ui::TextFieldComponent* renderer::focusedTextField;
 
 double lastTime; // Used for deltaTime calculation
@@ -24,11 +32,11 @@ bool rightMouseButtonPressed = false;
 bool middleMouseButtonPressed = false;
 bool spacePressed = false;
 
-#define LIGHT_POSITION glm::vec3(4, 0, 4)
-#define LIGHT_RADIUS 0.2
+// Usually nullptr, but has a value when the user is currently spawning an object and settings its parameters
+MassBody* spawnedBody;
 
 // This function creates an OpenGL program from a vertex and a fragment shader and returns its ID
-GLuint LoadShaders(const char* vertex_file_path, const char* fragment_file_path) {
+GLuint LoadShaderProgram(const char* vertex_file_path, const char* fragment_file_path) {
 
 	// Create the shaders
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -117,6 +125,13 @@ GLuint LoadShaders(const char* vertex_file_path, const char* fragment_file_path)
 	return ProgramID;
 }
 
+void abortSpawn() {
+	delete spawnedBody;
+	spawnedBody = nullptr;
+
+	ui::showBodyProperties(renderer::loadedUniverse->GetBodies()->at(renderer::camera.focusedBodyIndex));
+}
+
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
 	renderer::camera.distance -= yoffset * renderer::camera.sensitivity;
 	renderer::camera.distance = std::fmaxf(renderer::camera.distance, 2.0f);
@@ -131,6 +146,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 			if (key == GLFW_KEY_SPACE) {
 				renderer::loadedUniverse->timeScale = 1 - renderer::loadedUniverse->timeScale;
 			}
+			else if (key == GLFW_KEY_ESCAPE) {
+				if (spawnedBody != nullptr) {
+					abortSpawn();
+				}
+			}
 		}
 	}
 }
@@ -142,13 +162,25 @@ void charCallback(GLFWwindow* window, unsigned int codepoint) {
 }
 
 void resizeCallback(GLFWwindow* window, int width, int height) {
-	glViewport(0, 0, width, height);
 	
+}
+
+void framebufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+
 	renderer::windowWidth = width;
 	renderer::windowHeight = height;
 
 	renderer::camera.windowWidth = width;
 	renderer::camera.windowHeight = height;
+
+	glBindTexture(GL_TEXTURE_2D, renderer::ColorBufferTextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glBindTexture(GL_TEXTURE_2D, renderer::EmissionBufferTextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glBindRenderbuffer(GL_RENDERBUFFER, renderer::rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 }
 
 int renderer::init() {
@@ -174,6 +206,7 @@ int renderer::init() {
 	glfwSetScrollCallback(window, scrollCallback);
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetCharCallback(window, charCallback);
+	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	glfwSetWindowSizeCallback(window, resizeCallback);
@@ -183,20 +216,23 @@ int renderer::init() {
 
 	std::cout << "Shader load start" << std::endl;
 
-	shader.ProgramID = LoadShaders("shaders\\default\\vertexShader.glsl", "shaders\\default\\fragmentShader.glsl");
-	starShader.ProgramID = LoadShaders("shaders\\stars\\vertexShader.glsl", "shaders\\stars\\fragmentShader.glsl");
-	overlayShader.ProgramID = LoadShaders("shaders\\overlay\\vertexShader.glsl", "shaders\\overlay\\fragmentShader.glsl");
-	uiShader.ProgramID = LoadShaders("shaders\\ui\\vertexShader.glsl", "shaders\\ui\\fragmentShader.glsl");
+	shader.ProgramID = LoadShaderProgram("shaders\\default\\vertexShader.glsl", "shaders\\default\\fragmentShader.glsl");
+	starShader.ProgramID = LoadShaderProgram("shaders\\stars\\vertexShader.glsl", "shaders\\stars\\fragmentShader.glsl");
+	overlayShader.ProgramID = LoadShaderProgram("shaders\\overlay\\vertexShader.glsl", "shaders\\overlay\\fragmentShader.glsl");
+	uiShader.ProgramID = LoadShaderProgram("shaders\\ui\\vertexShader.glsl", "shaders\\ui\\fragmentShader.glsl");
+	postProcessingShader.ProgramID = LoadShaderProgram("shaders\\postprocessing\\vertexShader.glsl", "shaders\\postprocessing\\fragmentShader.glsl");
 
 	shader.MatrixUniformID = glGetUniformLocation(shader.ProgramID, "MVP");
 	shader.ViewMatrixUniformID = glGetUniformLocation(shader.ProgramID, "V");
 	shader.ModelMatrixUniformID = glGetUniformLocation(shader.ProgramID, "M");
 	shader.UnlitUniformID = glGetUniformLocation(shader.ProgramID, "Unlit");
+	shader.EmissiveUniformID = glGetUniformLocation(shader.ProgramID, "Emissive");
 	shader.LightPosUniformID = glGetUniformLocation(shader.ProgramID, "LightPosition_worldspace");
+	shader.LightColorUniformID = glGetUniformLocation(shader.ProgramID, "LightColor");
 	shader.ModelColorUniformID = glGetUniformLocation(shader.ProgramID, "ModelColor");
 	shader.OccluderCountUniformID = glGetUniformLocation(shader.ProgramID, "OccluderCount");
 	shader.LightRadiusUniformID = glGetUniformLocation(shader.ProgramID, "LightRadius");
-	
+
 	for (int i = 0; i < MAX_OCCLUDERS; i++) {
 		std::string indexStr = "[" + std::to_string(i) + "]";
 
@@ -219,6 +255,9 @@ int renderer::init() {
 
 	uiShader.UseTextureUniformID = glGetUniformLocation(uiShader.ProgramID, "UseTexture");
 
+	postProcessingShader.ScreenTextureUniformID = glGetUniformLocation(postProcessingShader.ProgramID, "ScreenTexture");
+	postProcessingShader.EmissionTextureUniformID = glGetUniformLocation(postProcessingShader.ProgramID, "EmissionTexture");
+
 	std::cout << "Shader load end" << std::endl;
 
 	ui::fontRendering::init();
@@ -235,15 +274,53 @@ int renderer::init() {
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	glEnable(GL_MULTISAMPLE);
 
+	// Framebuffer
+	glGenFramebuffers(1, &FramebufferID);
+	glBindFramebuffer(GL_FRAMEBUFFER, FramebufferID);
+
+	// Generate a texture for the color (since we will later need to read from it)
+	glGenTextures(1, &ColorBufferTextureID);
+	glBindTexture(GL_TEXTURE_2D, ColorBufferTextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Attach it to currently bound framebuffer object
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorBufferTextureID, 0);
+
+	// Repeat for the emission buffer
+	glGenTextures(1, &EmissionBufferTextureID);
+	glBindTexture(GL_TEXTURE_2D, EmissionBufferTextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, EmissionBufferTextureID, 0);
+
+	// Unbind texture
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// OpenGL still needs a depth and stencil buffer but we don't need to access them so we don't have to use a texture and can use a RBO instead
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, windowWidth, windowHeight);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR: Framebuffer is not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	std::cout << "Render parameters set" << std::endl;
 
-	camera = Camera(glm::vec3(0,0,0), glm::vec2(0,0), 5.0f, glm::radians(45.0f), 0.5f);
+	camera = Camera(glm::vec3(0, 0, 0), glm::vec2(0, 0), 5.0f, glm::radians(45.0f), 0.5f);
 	camera.windowWidth = windowWidth;
 	camera.windowHeight = windowHeight;
 
 	bodyLODModels = new RenderModel[4];
 	for (int i = 0; i < 4; i++) {
-		bodyLODModels[i] = Sphere(64 / (i+1), 1);
+		bodyLODModels[i] = Sphere(64 / (i + 1), 1);
 	}
 
 	starSphereModel = new StarSphere();
@@ -323,12 +400,13 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 
 		// Rotation on second axis
 		glm::mat4 rotationMatrixY(1.0f);
-		rotationMatrixY = glm::rotate(rotationMatrixY, yAngle, rightVector); 
+		rotationMatrixY = glm::rotate(rotationMatrixY, yAngle, rightVector);
 		RelativeOrbitPosition = (rotationMatrixY * glm::vec4(RelativeOrbitPosition, 1.0f));
 
 		lastMouseX = mouseX;
 		lastMouseY = mouseY;
-	} else if (Camera::isOrbiting) {
+	}
+	else if (Camera::isOrbiting) {
 		Camera::isOrbiting = false;
 	}
 
@@ -338,7 +416,7 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 		Position = glm::mix(previousPosition, Position, interpolationT);
 		FocusedPosition = glm::mix(previousFocusedPosition, FocusedPosition, interpolationT);
 
-		interpolationT += deltaTime*4.0f;
+		interpolationT += deltaTime * 4.0f;
 		if (interpolationT >= 1) {
 			interpolationT = 1;
 			interpolating = false;
@@ -347,16 +425,16 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 
 	// Calculate view matrices (one with translation, one without that is used to render the background)
 	StationaryViewMatrix = glm::lookAt(
-			glm::vec3(0),
-			FocusedPosition - Position, // What to look at
-			upVector
-		);
-	
+		glm::vec3(0),
+		FocusedPosition - Position, // What to look at
+		upVector
+	);
+
 	ViewMatrix = glm::lookAt(
-			Position, // Camera position
-			FocusedPosition, // What to look at
-			upVector
-		);
+		Position, // Camera position
+		FocusedPosition, // What to look at
+		upVector
+	);
 
 	if (dragging) {
 		if (!Camera::isBeingDragged) {
@@ -394,7 +472,15 @@ void renderer::Camera::SetFocusedBody(int focusedBodyIndex) {
 }
 
 void renderer::preRender() {
-	
+	glBindFramebuffer(GL_FRAMEBUFFER, FramebufferID);
+
+	GLenum drawbuffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDrawBuffers(2, drawbuffers);
+	glUniform1i(shader.UnlitUniformID, 0);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // we're not using the stencil buffer now
+	glEnable(GL_DEPTH_TEST);
 }
 
 // Both are in OpenGL screenspace [-1; 1]
@@ -418,7 +504,7 @@ void renderer::postRender(double deltaTime) {
 
 	if (mouseX != previousMouseX || mouseY != previousMouseY) {
 		for (int i = 0; i < uiPanels.size(); i++) {
-			uiPanels.at(i).onMouseMoved(mouseX, mouseY);
+			uiPanels.at(i)->onMouseMoved(mouseX, mouseY);
 		}
 
 		previousMouseX = mouseX;
@@ -461,21 +547,44 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 		focusedTextField->setFocused(false);
 		absorbed = true;
 	}
-	
+
 	for (int i = 0; i < uiPanels.size(); i++) {
-		if (uiPanels.at(i).GetBounds().Contains(mouseX, mouseY)) {
-			uiPanels.at(i).onMouseDown(mouseX, mouseY, button);
+		if (uiPanels.at(i)->GetBounds().Contains(mouseX, mouseY)) {
+			uiPanels.at(i)->onMouseDown(mouseX, mouseY, button);
 			absorbed = true;
 		}
 	}
-	
+
 
 
 	if (!absorbed) {
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			Universe::RaycastHit hitResult = loadedUniverse->Raycast(camera.Position, CreateMouseRay());
-			if (hitResult.hit) {
-				camera.SetFocusedBody(hitResult.hitBodyIndex);
+			if (spawnedBody == nullptr) {
+				Universe::RaycastHit hitResult = loadedUniverse->Raycast(camera.Position, CreateMouseRay());
+				if (hitResult.hit) {
+					camera.SetFocusedBody(hitResult.hitBodyIndex);
+				}
+			}
+			else {
+				abortSpawn();
+			}
+		}
+		else if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			MassBody* focusedBody = loadedUniverse->GetBodies()->at(camera.focusedBodyIndex);
+			glm::vec3 mouseRay = CreateMouseRay();
+			glm::vec3 planeNormal = glm::normalize(camera.Position - focusedBody->position);
+			glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);
+			if (spawnedBody == nullptr) {
+				spawnedBody = new MassBody(planeIntersection, focusedBody->mass * 0.1F, focusedBody->radius * 0.1F, Color((unsigned int)(std::rand()/(float)RAND_MAX*0xFFFFFF)));
+				ui::showBodyProperties(spawnedBody, "Spawned body");
+			}
+			else {
+				glm::vec3 spawnVelocity = (planeIntersection - spawnedBody->position) * 0.5F;
+				spawnedBody->velocity = spawnVelocity;
+				loadedUniverse->AddBody(spawnedBody);
+				ui::showBodyProperties(loadedUniverse->GetBodies()->at(camera.focusedBodyIndex));
+
+				spawnedBody = nullptr;
 			}
 		}
 	}
@@ -521,16 +630,18 @@ void renderer::renderModel(RenderModel model, glm::mat4 projectionMatrix, glm::m
 	// Our ModelViewProjection : multiplication of our 3 matrices
 	glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix; // Remember, matrix multiplication is the other way around
 
+	MassBody* emittingBody = loadedUniverse->GetEmissiveBody();
+
 	// Send our transformation to the currently bound shader, in the "MVP" uniform
 	// This is done in the main loop since each model will have a different MVP matrix (At least for the M part)
 	glUniformMatrix4fv(shader.MatrixUniformID, 1, GL_FALSE, &mvp[0][0]);
 	glUniformMatrix4fv(shader.ModelMatrixUniformID, 1, GL_FALSE, &modelMatrix[0][0]);
 	glUniformMatrix4fv(shader.ViewMatrixUniformID, 1, GL_FALSE, &viewMatrix[0][0]);
+	glUniform3f(shader.LightColorUniformID, emittingBody->color.red, emittingBody->color.green, emittingBody->color.blue);
 	glUniform3f(shader.ModelColorUniformID, color.red, color.green, color.blue);
 
-	glm::vec3 lightPos = LIGHT_POSITION;
-	glUniform3f(shader.LightPosUniformID, lightPos.x, lightPos.y, lightPos.z);
-	glUniform1f(shader.LightRadiusUniformID, LIGHT_RADIUS);
+	glUniform3f(shader.LightPosUniformID, emittingBody->position.x, emittingBody->position.y, emittingBody->position.z);
+	glUniform1f(shader.LightRadiusUniformID, emittingBody->radius);
 
 	glBindVertexArray(model.VertexArrayID);
 
@@ -573,24 +684,39 @@ void renderer::renderModel(RenderModel model, glm::mat4 projectionMatrix, glm::m
 	glDisableVertexAttribArray(0);
 }
 
-void renderer::renderBody(MassBody body, glm::mat4 projectionMatrix) {
+void renderer::renderBody(MassBody* body, glm::mat4 projectionMatrix) {
 	glm::mat4 modelMatrix = glm::mat4(1);
 
-	modelMatrix = glm::translate(modelMatrix, body.position);
-	modelMatrix = glm::scale(modelMatrix, glm::vec3(body.radius));
+	modelMatrix = glm::translate(modelMatrix, body->position);
+	modelMatrix = glm::scale(modelMatrix, glm::vec3(body->radius));
 
-	glUniform1i(shader.OccluderCountUniformID, body.occluders.size());
-	for (int i = 0; i < body.occluders.size(); i++) {
-		MassBody* occluder = body.occluders.at(i);
-		glUniform3f(shader.OccluderPositionsUniformIDs[i], occluder->position.x, occluder->position.y, occluder->position.z);
-		glUniform1f(shader.OccluderRadiusesUniformIDs[i], occluder->radius);
+	bool isEmissive = body == loadedUniverse->GetEmissiveBody();
+
+	if (isEmissive) {
+		glUniform1i(shader.OccluderCountUniformID, 0);
+		glUniform1i(shader.UnlitUniformID, 1);
+		glUniform1i(shader.EmissiveUniformID, 1);
+	}
+	else {
+		glUniform1i(shader.OccluderCountUniformID, body->occluders.size());
+		for (int i = 0; i < body->occluders.size(); i++) {
+			MassBody* occluder = body->occluders.at(i);
+			glUniform3f(shader.OccluderPositionsUniformIDs[i], occluder->position.x, occluder->position.y, occluder->position.z);
+			glUniform1f(shader.OccluderRadiusesUniformIDs[i], occluder->radius);
+		}
 	}
 
-	float distanceFromCamera = glm::distance(camera.Position, body.position) - body.radius;
+	float distanceFromCamera = glm::distance(camera.Position, body->position) - body->radius;
 
-	renderModel(bodyLODModels[(int)fminf(fmaxf(distanceFromCamera / (body.radius*8.0f), 0.0f), 3.0f)], projectionMatrix, camera.ViewMatrix, modelMatrix, body.color); // The weird looking formula is for choosing the right LOD model based on distance from camera and radius. I just tried different configurations out to try to find the right balance.
+	renderModel(bodyLODModels[(int)fminf(fmaxf(distanceFromCamera / (body->radius * 8.0f), 0.0f), 3.0f)], projectionMatrix, camera.ViewMatrix, modelMatrix, body->color); // The weird looking formula is for choosing the right LOD model based on distance from camera and radius. I just tried different configurations out to try to find the right balance.
 
-	glUniform1i(shader.OccluderCountUniformID, 0);
+	if (isEmissive) {
+		glUniform1i(shader.UnlitUniformID, 0);
+		glUniform1i(shader.EmissiveUniformID, 0);
+	}
+	else {
+		glUniform1i(shader.OccluderCountUniformID, 0);
+	}
 }
 
 // Requires the starShader
@@ -682,7 +808,7 @@ void renderer::renderGrid(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 	glLineWidth(1);
 	glUniform3f(shader.ModelColorUniformID, 1.0f, 1.0f, 1.0f);
 	glBegin(GL_LINE_STRIP);
-	for (int i = -1000; i <= 1000; i+=10) {
+	for (int i = -1000; i <= 1000; i += 10) {
 		for (int j = -1000; j <= 1000; j += 100) {
 			glVertex3f(i, 0.0f, j);
 		}
@@ -730,7 +856,7 @@ void renderer::renderUI() {
 	glDisable(GL_DEPTH_TEST);
 
 	for (int i = 0; i < uiPanels.size(); i++) {
-		uiPanels.at(i).draw();
+		uiPanels.at(i)->draw();
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -749,7 +875,7 @@ void renderer::renderAll() {
 
 	// Projection matrix : Camera Field of View, right aspect ratio, display range : 0.1 unit <-> 100 units
 	glm::mat4 Projection = glm::perspective(renderer::camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
-	
+
 	bool shiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT);
 	camera.Update(mouseX, mouseY, !shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), deltaTime);
 
@@ -762,23 +888,87 @@ void renderer::renderAll() {
 	glUniform1i(shader.UnlitUniformID, 1);
 	renderGrid(Projection, camera.ViewMatrix);
 
-	// Render light source
-	renderModel(bodyLODModels[2], Projection, camera.ViewMatrix, glm::scale(glm::translate(glm::mat4(1), LIGHT_POSITION), glm::vec3(LIGHT_RADIUS)), COLOR_WHITE);
+	// Render the path of the spawned object
+	if (spawnedBody != nullptr) {
+		MassBody* focusedBody = loadedUniverse->GetBodies()->at(camera.focusedBodyIndex);
+		glm::vec3 mouseRay = CreateMouseRay();
+		glm::vec3 planeNormal = glm::normalize(camera.Position - focusedBody->position);
+		glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);
 
-	// Render mouse-ray/plane intersection point
-	glm::vec3 mouseRay = CreateMouseRay();
-	glm::vec3 planeNormal = glm::normalize(camera.Position - camera.FocusedPosition);
-	glm::vec3 intersectionPoint = PlaneIntersection(camera.FocusedPosition, planeNormal, camera.Position, mouseRay);
-	//renderModel(bodyLODModels[2], Projection, camera.ViewMatrix, glm::scale(glm::translate(glm::mat4(1), intersectionPoint), glm::vec3(0.1F)), COLOR_RED);
+		glm::vec3 spawnVelocity = (planeIntersection - spawnedBody->position) * 0.5F;
 
-	glUniform1i(shader.UnlitUniformID, 0);
-	std::vector<MassBody*> bodies = *loadedUniverse->GetBodies();
-	for (unsigned int i = 0; i < bodies.size(); i++) {
-		renderBody(*bodies.at(i), Projection);
+		glm::vec3 p = spawnedBody->position;
+		glm::vec3 velocity = spawnVelocity;
+		auto bodies = loadedUniverse->GetBodies();
+		for (int i = 0; i < 50; i++) {
+			// Step 1: calculate velocity
+			glm::vec3 totalGravitationalForce = glm::vec3(0);
+			// Loop through all bodies in the universe to calculate their gravitational pull on the object (TODO: Ignore very far away objects for better performance)
+			for (unsigned int j = 0; j < bodies->size(); j++) {
+				if (i == j) continue; // No need to calculate the gravitational pull of a body on itself as it will always be 0.
+				MassBody* otherBody = bodies->at(j);
+
+				if (!otherBody->affectsOthers) continue; // Ignore this one
+
+				float force = loadedUniverse->gConstant * spawnedBody->mass * otherBody->mass / std::pow(glm::distance(p, otherBody->position), 2);
+				glm::vec3 forceDirection = glm::normalize(otherBody->position - p);
+
+				totalGravitationalForce += forceDirection * force;
+			}
+
+			// Update the velocity of the object by adding the acceleration, which is the force divided by the object's mass. (and multiply it all by deltaTime)
+			velocity += totalGravitationalForce / spawnedBody->mass * 0.5f;
+
+			// Step 2: update position
+			p += velocity * 0.5f;
+
+			renderModel(bodyLODModels[3], Projection, camera.ViewMatrix, glm::scale(glm::translate(glm::mat4(1), p), glm::vec3(0.05F)), COLOR_WHITE);
+		}
 	}
 
-	glDisable(GL_DEPTH_TEST); // No depth test required to render UI and overlays
+	std::vector<MassBody*> bodies = *loadedUniverse->GetBodies();
+	for (unsigned int i = 0; i < bodies.size(); i++) {
+		renderBody(bodies.at(i), Projection);
+	}
 
+	if (spawnedBody != nullptr) {
+		renderBody(spawnedBody, Projection);
+	}
+
+	glDisable(GL_DEPTH_TEST); // No depth test required from here on as we won't be rendering any 3D stuff
+
+	// First, let's draw the contents of the color buffer texture to the screen with post-processing. We do this now as we don't want to post-process UI and overlays
+	// Unbind framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// Draw content of color buffer texture to screen
+	glUseProgram(postProcessingShader.ProgramID);
+	glUniform1i(postProcessingShader.ScreenTextureUniformID, 0);
+	glUniform1i(postProcessingShader.EmissionTextureUniformID, 1);
+	glDisable(GL_DEPTH_TEST);
+
+	glActiveTexture(GL_TEXTURE0 + 0);
+	glBindTexture(GL_TEXTURE_2D, ColorBufferTextureID);
+
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, EmissionBufferTextureID);
+	glActiveTexture(GL_TEXTURE0 + 0);
+
+	// Draw a quad covering the entire screen (TODO GL_QUADS is depreacted and we should be using a VAO for this)
+	glBegin(GL_QUADS);
+	glVertexAttrib2f(1, 0.0F, 1.0F);
+	glVertex2f(-1.0f, 1.0f);
+	glVertexAttrib2f(1, 0.0F, 0.0F);
+	glVertex2f(-1.0f, -1.0f);
+	glVertexAttrib2f(1, 1.0F, 0.0F);
+	glVertex2f(1.0f, -1.0f);
+	glVertexAttrib2f(1, 1.0F, 1.0F);
+	glVertex2f(1.0f, 1.0f);
+	glEnd();
+
+	// Let's now draw the rest (focus overlay + ui) on top of that
 	// Enable transparency
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -804,6 +994,10 @@ void renderer::renderAll() {
 void renderer::terminate() {
 	delete[] bodyLODModels;
 	delete starSphereModel;
+
+	glDeleteTextures(1, &ColorBufferTextureID);
+	glDeleteTextures(1, &EmissionBufferTextureID);
+	glDeleteFramebuffers(1, &FramebufferID);
 
 	glfwTerminate();
 }

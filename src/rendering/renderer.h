@@ -29,7 +29,9 @@ namespace renderer {
 		GLuint ModelMatrixUniformID;
 		GLuint ViewMatrixUniformID;
 		GLuint UnlitUniformID;
+		GLuint EmissiveUniformID;
 		GLuint LightPosUniformID;
+		GLuint LightColorUniformID;
 		GLuint ModelColorUniformID;
 
 		// Shadow marching Uniforms
@@ -62,6 +64,13 @@ namespace renderer {
 	struct UIShader {
 		GLuint ProgramID;
 		GLuint UseTextureUniformID;
+	};
+
+	// Post processing shader
+	struct PostProcessingShader {
+		GLuint ProgramID;
+		GLuint ScreenTextureUniformID;
+		GLuint EmissionTextureUniformID;
 	};
 
 	struct Camera {
@@ -101,7 +110,7 @@ namespace renderer {
 
 	int init();
 	void renderModel(RenderModel model, glm::mat4 projectionMatrix, glm::mat4 viewMatrix, glm::mat4 modelMatrix, Color color);
-	void renderBody(MassBody body, glm::mat4 projectionMatrix);
+	void renderBody(MassBody* body, glm::mat4 projectionMatrix);
 	void renderStars(glm::mat4 projectionMatrix);
 	void renderGrid(glm::mat4 projectionMatrix, glm::mat4 viewMatrix);
 	void renderFocusOverlay(glm::mat4 projectionMatrix);
@@ -121,16 +130,23 @@ namespace renderer {
 	extern Camera camera;
 	extern Universe* loadedUniverse;
 	extern GLFWwindow* window;
+
 	extern Shader shader;
 	extern StarShader starShader;
 	extern OverlayShader overlayShader;
 	extern UIShader uiShader;
+	extern PostProcessingShader postProcessingShader;
 
 	extern RenderModel* bodyLODModels; // Array of spheres with different resolutions used to render bodies
 	extern StarSphere* starSphereModel;
 
-	extern std::vector<ui::Panel> uiPanels;
+	extern std::vector<ui::Panel*> uiPanels;
 	extern ui::TextFieldComponent* focusedTextField;
+
+	extern GLuint FramebufferID;
+	extern GLuint ColorBufferTextureID;
+	extern GLuint EmissionBufferTextureID;
+	extern GLuint rbo;
 
 	extern int windowWidth;
 	extern int windowHeight;
