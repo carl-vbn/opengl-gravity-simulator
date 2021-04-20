@@ -587,7 +587,7 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 				spawnedBody = new MassBody(planeIntersection, focusedBody->mass * 0.1F, focusedBody->radius * 0.1F, Color((unsigned int)(std::rand()/(float)RAND_MAX*0xFFFFFF)));
 				
 				// Discretely focus the new body
-				camera.offset = glm::vec3((camera.FocusedPosition + camera.offset) - spawnedBody->position);
+				camera.offset = glm::vec3(camera.FocusedPosition - spawnedBody->position);
 				camera.focusedBody = spawnedBody;
 				
 				ui::showBodyProperties(spawnedBody, "Spawned body");

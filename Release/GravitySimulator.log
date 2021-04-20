@@ -1,16 +1,4 @@
-﻿  main.cpp
-  button.cpp
-  checkbox.cpp
-  font_renderer.cpp
-  label.cpp
-  panel.cpp
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(27,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(64,121): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(67,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\ui\panel.cpp(86,21): warning C4018: '<': signed/unsigned mismatch
-  text_field.cpp
-  ui_manager.cpp
-  renderer.cpp
+﻿  renderer.cpp
 E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(137,69): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
 E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(515,21): warning C4018: '<': signed/unsigned mismatch
 E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(516,41): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
@@ -35,9 +23,9 @@ E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(895,24): warning 
 E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(895,16): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  1 of 1175 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  2 of 1175 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    12 functions had inline decision re-evaluated but remain unchanged
+    17 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
 glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'E:\Projects\OpenGL\GravitySimulator\Release\vc120.pdb'; linking object as if no debug info
   GravitySimulator.vcxproj -> E:\Projects\OpenGL\GravitySimulator\Release\GravitySimulator.exe

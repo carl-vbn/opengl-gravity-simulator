@@ -1,6 +1,10 @@
 --- 3D Gravity simulator scene file definition 1.0 ---
 This type of file stores a universe preset that can be loaded by the Gravity simulator.
-The file format definition might change in the future
+The file format definition might change in the future.
+
+Known limitations:
+- it doesn't store which body is emissive
+- it doesn't remember which bodies aren't affected by gravity/don't affect others
 ------------------------------------------------------
 
 First 8 bytes: default scene configuration
