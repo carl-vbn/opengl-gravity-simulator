@@ -20,6 +20,7 @@ namespace ui {
 		CheckBoxComponent* affectedByGravityCB;
 		CheckBoxComponent* affectsOthersCB;
 		ButtonComponent* btnApplyProperties;
+		ButtonComponent* btnSetEmissive;
 	};
 
 	struct SceneSettingsComponents {

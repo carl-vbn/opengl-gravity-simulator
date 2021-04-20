@@ -18,6 +18,15 @@ std::vector<MassBody*>* Universe::GetBodies() {
 	return &bodies;
 }
 
+int Universe::GetBodyIndex(MassBody* body) {
+	int bodyIndex = -1;
+	for (int i = 0; i < bodies.size(); i++) {
+		if (bodies.at(i) == body) bodyIndex = i;
+	}
+	
+	return bodyIndex;
+}
+
 void Universe::AssignOccluders() {
 	for (int i = 0; i < bodies.size(); i++) {
 		bodies.at(i)->occluders.clear();
@@ -33,6 +42,17 @@ void Universe::AssignOccluders() {
 
 void Universe::AddBody(MassBody* body) {
 	bodies.push_back(body);
+
+	// Re-assign occluders
+	AssignOccluders();
+}
+
+void Universe::DeleteBody(MassBody* body) {
+	int bodyIndex = GetBodyIndex(body);
+
+	if (bodyIndex >= 0) bodies.erase(bodies.begin() + bodyIndex);
+
+	delete body;
 
 	// Re-assign occluders
 	AssignOccluders();

@@ -84,6 +84,14 @@ namespace ui {
 			}
 		});
 
+		bodyPropertyComponents.btnSetEmissive = new ButtonComponent("Make Emissive", []() {
+			Universe* universe = renderer::loadedUniverse;
+			if (universe != nullptr) {
+				int bodyIndex = universe->GetBodyIndex(selectedBody);
+				if (bodyIndex >= 0) universe->SetEmissiveBody(bodyIndex);
+			}
+		});
+
 		bodyPropertyComponents.massInput = new TextFieldComponent("Mass", "", TFF_DECIMAL_NUMBER);
 		bodyPropertyComponents.sizeInput = new TextFieldComponent("Size", "", TFF_DECIMAL_NUMBER);
 		bodyPropertyComponents.colorInput = new TextFieldComponent("Color", "", TFF_HEX_NUMBER);
@@ -135,6 +143,7 @@ namespace ui {
 		bodyPropertiesContainer.AddComponent(bodyPropertyComponents.sizeInput);
 		bodyPropertiesContainer.AddComponent(bodyPropertyComponents.colorInput);
 		bodyPropertiesContainer.AddComponent(bodyPropertyComponents.btnApplyProperties);
+		bodyPropertiesContainer.AddComponent(bodyPropertyComponents.btnSetEmissive);
 
 		Container gravitySettingsContainer = Container("Gravity settings");
 		gravitySettingsContainer.AddComponent(bodyPropertyComponents.affectedByGravityCB);
@@ -150,7 +159,7 @@ namespace ui {
 		sceneSettingsContainer.AddComponent(sceneSettingsComponents.saveButton);
 		sceneSettingsContainer.AddComponent(sceneSettingsComponents.loadButton);
 
-		objectPanel = new Panel("Object", Rectangle(0.8f, 0.5f, 0.99f, 0.98f, Rectangle(-1.0f, -1.0f, 1.0f, 1.0f)));
+		objectPanel = new Panel("Object", Rectangle(0.8f, 0.45f, 0.99f, 0.98f, Rectangle(-1.0f, -1.0f, 1.0f, 1.0f)));
 		objectPanel->AddContainer(bodyPropertiesContainer);
 		objectPanel->AddContainer(gravitySettingsContainer);
 
@@ -161,7 +170,7 @@ namespace ui {
 		renderer::uiPanels.push_back(objectPanel);
 		renderer::uiPanels.push_back(universePanel);
 
-		showBodyProperties(renderer::loadedUniverse->GetBodies()->at(renderer::camera.focusedBodyIndex));
+		showBodyProperties(renderer::camera.focusedBody);
 	}
 
 	// Delete all components from memory

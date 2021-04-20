@@ -77,7 +77,7 @@ namespace renderer {
 		float fov;
 		float sensitivity;
 
-		unsigned int focusedBodyIndex;
+		MassBody* focusedBody;
 		glm::vec3 offset, deltaOffset;
 		float distance; // The distance between the camera and the focused position
 
@@ -105,7 +105,7 @@ namespace renderer {
 		Camera(glm::vec3 offset, glm::vec2 orbitAngles, float distance, float fov, float sensitivity);
 
 		void Update(int mouseX, int mouseY, bool orbiting, bool dragging, float deltaTime);
-		void SetFocusedBody(int focusedBodyIndex);
+		void SetFocusedBody(MassBody* focusedBody);
 	};
 
 	int init();

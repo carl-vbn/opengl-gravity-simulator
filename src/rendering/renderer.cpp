@@ -128,8 +128,9 @@ GLuint LoadShaderProgram(const char* vertex_file_path, const char* fragment_file
 void abortSpawn() {
 	delete spawnedBody;
 	spawnedBody = nullptr;
+	renderer::camera.SetFocusedBody(renderer::loadedUniverse->GetBodies()->at(0));
 
-	ui::showBodyProperties(renderer::loadedUniverse->GetBodies()->at(renderer::camera.focusedBodyIndex));
+	ui::showBodyProperties(renderer::camera.focusedBody);
 }
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
@@ -148,6 +149,17 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 			}
 			else if (key == GLFW_KEY_ESCAPE) {
 				if (spawnedBody != nullptr) {
+					abortSpawn();
+				}
+			}
+			else if (key == GLFW_KEY_DELETE || key == GLFW_KEY_X) {
+				if (spawnedBody == nullptr) {
+					if (renderer::loadedUniverse->GetBodies()->size() > 1) {
+						renderer::loadedUniverse->DeleteBody(renderer::camera.focusedBody);
+						renderer::camera.SetFocusedBody(renderer::loadedUniverse->GetBodies()->at(0));
+					}
+				}
+				else {
 					abortSpawn();
 				}
 			}
@@ -343,7 +355,7 @@ renderer::Camera::Camera(glm::vec3 offset, glm::vec2 orbitAngles, float distance
 	Camera::fov = fov;
 	Camera::sensitivity = sensitivity;
 
-	Camera::focusedBodyIndex = 0;
+	Camera::focusedBody = nullptr;
 	Camera::isBeingDragged = false;
 	Camera::isOrbiting = false;
 	Camera::startMouseX = 0;
@@ -363,8 +375,6 @@ renderer::Camera::Camera() {}
 
 // Handles all camera movement. Called every frame.
 void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool dragging, float deltaTime) {
-	MassBody* focusedBody = nullptr;
-	if (loadedUniverse->GetBodies()->size() > focusedBodyIndex) focusedBody = loadedUniverse->GetBodies()->at(focusedBodyIndex);
 	FocusedPosition = ((focusedBody != nullptr) ? focusedBody->position : glm::vec3(0)) + offset + deltaOffset;
 
 	glm::vec3 viewDir = glm::normalize(FocusedPosition - Position);
@@ -459,16 +469,15 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 	}
 }
 
-void renderer::Camera::SetFocusedBody(int focusedBodyIndex) {
-	this->focusedBodyIndex = focusedBodyIndex;
+void renderer::Camera::SetFocusedBody(MassBody* focusedBody) {
+	this->focusedBody = focusedBody;
 	this->previousPosition = camera.Position;
 	this->previousFocusedPosition = camera.FocusedPosition;
 	this->interpolating = true;
 	this->interpolationT = 0;
 	this->offset = glm::vec3(0);
 
-	if (loadedUniverse != nullptr && focusedBodyIndex >= 0)
-		ui::showBodyProperties(loadedUniverse->GetBodies()->at(focusedBodyIndex));
+	ui::showBodyProperties(focusedBody);
 }
 
 void renderer::preRender() {
@@ -562,7 +571,7 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 			if (spawnedBody == nullptr) {
 				Universe::RaycastHit hitResult = loadedUniverse->Raycast(camera.Position, CreateMouseRay());
 				if (hitResult.hit) {
-					camera.SetFocusedBody(hitResult.hitBodyIndex);
+					camera.SetFocusedBody(hitResult.hitBody);
 				}
 			}
 			else {
@@ -570,19 +579,24 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 			}
 		}
 		else if (button == GLFW_MOUSE_BUTTON_LEFT) {
-			MassBody* focusedBody = loadedUniverse->GetBodies()->at(camera.focusedBodyIndex);
+			MassBody* focusedBody = camera.focusedBody;
 			glm::vec3 mouseRay = CreateMouseRay();
 			glm::vec3 planeNormal = glm::normalize(camera.Position - focusedBody->position);
 			glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);
 			if (spawnedBody == nullptr) {
 				spawnedBody = new MassBody(planeIntersection, focusedBody->mass * 0.1F, focusedBody->radius * 0.1F, Color((unsigned int)(std::rand()/(float)RAND_MAX*0xFFFFFF)));
+				
+				// Discretely focus the new body
+				camera.offset = glm::vec3((camera.FocusedPosition + camera.offset) - spawnedBody->position);
+				camera.focusedBody = spawnedBody;
+				
 				ui::showBodyProperties(spawnedBody, "Spawned body");
 			}
 			else {
 				glm::vec3 spawnVelocity = (planeIntersection - spawnedBody->position) * 0.5F;
 				spawnedBody->velocity = spawnVelocity;
 				loadedUniverse->AddBody(spawnedBody);
-				ui::showBodyProperties(loadedUniverse->GetBodies()->at(camera.focusedBodyIndex));
+				ui::showBodyProperties(camera.focusedBody);
 
 				spawnedBody = nullptr;
 			}
@@ -592,6 +606,7 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 
 void renderer::setUniverse(Universe* universe) {
 	renderer::loadedUniverse = universe;
+	camera.focusedBody = universe->GetBodies()->at(0);
 }
 
 // from https://stackoverflow.com/a/30005258
@@ -603,7 +618,7 @@ glm::vec3 renderer::CreateMouseRay() {
 	mouseX = mouseX / (windowWidth * 0.5) - 1.0;
 	mouseY = mouseY / (windowHeight * 0.5) - 1.0;
 
-	glm::mat4 proj = glm::perspective(camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+	glm::mat4 proj = glm::perspective(camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 500.0f);
 	glm::mat4 view = camera.StationaryViewMatrix;
 
 	glm::mat4 invVP = glm::inverse(proj * view);
@@ -824,7 +839,7 @@ void renderer::renderGrid(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 
 // Requires the overlayShader
 void renderer::renderFocusOverlay(glm::mat4 projectionMatrix) {
-	MassBody* focusedBody = loadedUniverse->GetBodies()->at(camera.focusedBodyIndex);
+	MassBody* focusedBody = camera.focusedBody;
 	glm::mat4 viewMatrix = camera.ViewMatrix;
 
 	// http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/billboards/
@@ -890,7 +905,7 @@ void renderer::renderAll() {
 
 	// Render the path of the spawned object
 	if (spawnedBody != nullptr) {
-		MassBody* focusedBody = loadedUniverse->GetBodies()->at(camera.focusedBodyIndex);
+		MassBody* focusedBody = camera.focusedBody;
 		glm::vec3 mouseRay = CreateMouseRay();
 		glm::vec3 planeNormal = glm::normalize(camera.Position - focusedBody->position);
 		glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);

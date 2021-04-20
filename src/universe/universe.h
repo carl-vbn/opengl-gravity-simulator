@@ -33,8 +33,10 @@ public:
 	float gConstant;
 
 	std::vector<MassBody*>* GetBodies();
+	int GetBodyIndex(MassBody* body);
 	void AssignOccluders();
 	void AddBody(MassBody* body);
+	void DeleteBody(MassBody* body);
 	void SetEmissiveBody(unsigned int emittingBodyIndex);
 	RaycastHit Raycast(glm::vec3 startPos, glm::vec3 dir);
 	unsigned int GetEmissiveBodyIndex();
