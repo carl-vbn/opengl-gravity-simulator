@@ -137,7 +137,7 @@ namespace renderer {
 	extern UIShader uiShader;
 	extern PostProcessingShader postProcessingShader;
 
-	extern RenderModel* bodyLODModels; // Array of spheres with different resolutions used to render bodies
+	extern std::vector<Sphere*> bodyLODModels; // Array of spheres with different resolutions used to render bodies
 	extern StarSphere* starSphereModel;
 
 	extern std::vector<ui::Panel*> uiPanels;

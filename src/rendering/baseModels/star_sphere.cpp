@@ -74,5 +74,6 @@ StarSphere::StarSphere() {
 }
 
 StarSphere::~StarSphere() {
+    dispose();
     delete[] normals;
 }

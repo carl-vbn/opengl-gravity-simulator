@@ -59,5 +59,6 @@ Cube::Cube() {
 }
 
 Cube::~Cube() {
+	dispose();
 	delete[] normals;
 }

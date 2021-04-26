@@ -67,5 +67,6 @@ Sphere::Sphere(int resolution, float radius) {
 }
 
 Sphere::~Sphere() {
+    dispose();
     delete[] normals;
 }

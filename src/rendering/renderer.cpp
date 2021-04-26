@@ -19,7 +19,7 @@ GLuint renderer::rbo;
 int renderer::windowWidth;
 int renderer::windowHeight;
 
-RenderModel* renderer::bodyLODModels;
+std::vector<Sphere*> renderer::bodyLODModels;
 StarSphere* renderer::starSphereModel;
 
 std::vector<ui::Panel*> renderer::uiPanels;
@@ -330,9 +330,8 @@ int renderer::init() {
 	camera.windowWidth = windowWidth;
 	camera.windowHeight = windowHeight;
 
-	bodyLODModels = new RenderModel[4];
 	for (int i = 0; i < 4; i++) {
-		bodyLODModels[i] = Sphere(64 / (i + 1), 1);
+		bodyLODModels.push_back(new Sphere(64 / (i + 1), 1));
 	}
 
 	starSphereModel = new StarSphere();
@@ -513,7 +512,7 @@ void renderer::postRender(double deltaTime) {
 
 	if (mouseX != previousMouseX || mouseY != previousMouseY) {
 		for (int i = 0; i < uiPanels.size(); i++) {
-			uiPanels.at(i)->onMouseMoved(mouseX, mouseY);
+			uiPanels[i]->onMouseMoved(mouseX, mouseY);
 		}
 
 		previousMouseX = mouseX;
@@ -558,8 +557,8 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 	}
 
 	for (int i = 0; i < uiPanels.size(); i++) {
-		if (uiPanels.at(i)->GetBounds().Contains(mouseX, mouseY)) {
-			uiPanels.at(i)->onMouseDown(mouseX, mouseY, button);
+		if (uiPanels[i]->GetBounds().Contains(mouseX, mouseY)) {
+			uiPanels[i]->onMouseDown(mouseX, mouseY, button);
 			absorbed = true;
 		}
 	}
@@ -581,7 +580,7 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 		else if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			MassBody* focusedBody = camera.focusedBody;
 			glm::vec3 mouseRay = CreateMouseRay();
-			glm::vec3 planeNormal = glm::normalize(camera.Position - focusedBody->position);
+			glm::vec3 planeNormal = glm::vec3(0, 1, 0); //glm::normalize(camera.Position - focusedBody->position); (uncomment if you don't want the spawn position to be contrainted to the horizontal plane)
 			glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);
 			if (spawnedBody == nullptr) {
 				spawnedBody = new MassBody(planeIntersection, focusedBody->mass * 0.1F, focusedBody->radius * 0.1F, Color((unsigned int)(std::rand()/(float)RAND_MAX*0xFFFFFF)));
@@ -660,32 +659,7 @@ void renderer::renderModel(RenderModel model, glm::mat4 projectionMatrix, glm::m
 
 	glBindVertexArray(model.VertexArrayID);
 
-	// 1st attribute buffer : vertices
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, model.VertexBufferID);
-	glVertexAttribPointer(
-		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		0,                  // stride
-		(void*)0            // array buffer offset
-	);
-
-	// 3rd attribute buffer : normals
-	glEnableVertexAttribArray(2);
-	glBindBuffer(GL_ARRAY_BUFFER, model.NormalBufferID);
-	glVertexAttribPointer(
-		2,                                // attribute
-		3,                                // size
-		GL_FLOAT,                         // type
-		GL_FALSE,                         // normalized?
-		0,                                // stride
-		(void*)0                          // array buffer offset
-	);
-
-	// Bind the model
-	// Index buffer
+	// Bind the model index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model.IndexBufferID);
 
 	// Draw the triangles !
@@ -695,8 +669,6 @@ void renderer::renderModel(RenderModel model, glm::mat4 projectionMatrix, glm::m
 		GL_UNSIGNED_INT,       // type
 		(void*)0               // element array buffer offset
 	);
-
-	glDisableVertexAttribArray(0);
 }
 
 void renderer::renderBody(MassBody* body, glm::mat4 projectionMatrix) {
@@ -715,7 +687,7 @@ void renderer::renderBody(MassBody* body, glm::mat4 projectionMatrix) {
 	else {
 		glUniform1i(shader.OccluderCountUniformID, body->occluders.size());
 		for (int i = 0; i < body->occluders.size(); i++) {
-			MassBody* occluder = body->occluders.at(i);
+			MassBody* occluder = body->occluders[i];
 			glUniform3f(shader.OccluderPositionsUniformIDs[i], occluder->position.x, occluder->position.y, occluder->position.z);
 			glUniform1f(shader.OccluderRadiusesUniformIDs[i], occluder->radius);
 		}
@@ -723,7 +695,7 @@ void renderer::renderBody(MassBody* body, glm::mat4 projectionMatrix) {
 
 	float distanceFromCamera = glm::distance(camera.Position, body->position) - body->radius;
 
-	renderModel(bodyLODModels[(int)fminf(fmaxf(distanceFromCamera / (body->radius * 8.0f), 0.0f), 3.0f)], projectionMatrix, camera.ViewMatrix, modelMatrix, body->color); // The weird looking formula is for choosing the right LOD model based on distance from camera and radius. I just tried different configurations out to try to find the right balance.
+	renderModel(*bodyLODModels[(int)fminf(fmaxf(distanceFromCamera / (body->radius * 8.0f), 0.0f), 3.0f)], projectionMatrix, camera.ViewMatrix, modelMatrix, body->color); // The weird looking formula is for choosing the right LOD model based on distance from camera and radius. I just tried different configurations out to try to find the right balance.
 
 	if (isEmissive) {
 		glUniform1i(shader.UnlitUniformID, 0);
@@ -748,32 +720,7 @@ void renderer::renderStars(glm::mat4 projectionMatrix) {
 
 	glBindVertexArray(starSphereModel->VertexArrayID);
 
-	// 1st attribute buffer : vertices
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, starSphereModel->VertexBufferID);
-	glVertexAttribPointer(
-		0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-		3,                  // size
-		GL_FLOAT,           // type
-		GL_FALSE,           // normalized?
-		0,                  // stride
-		(void*)0            // array buffer offset
-	);
-
-	// 3rd attribute buffer : normals
-	glEnableVertexAttribArray(2);
-	glBindBuffer(GL_ARRAY_BUFFER, starSphereModel->NormalBufferID);
-	glVertexAttribPointer(
-		2,                                // attribute
-		3,                                // size
-		GL_FLOAT,                         // type
-		GL_FALSE,                         // normalized?
-		0,                                // stride
-		(void*)0                          // array buffer offset
-	);
-
-	// Bind the model
-	// Index buffer
+	// Bind the model index buffer
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, starSphereModel->IndexBufferID);
 
 	// Draw the triangles !
@@ -783,8 +730,6 @@ void renderer::renderStars(glm::mat4 projectionMatrix) {
 		GL_UNSIGNED_INT,       // type
 		(void*)0               // element array buffer offset
 	);
-
-	glDisableVertexAttribArray(0);
 }
 
 
@@ -871,7 +816,7 @@ void renderer::renderUI() {
 	glDisable(GL_DEPTH_TEST);
 
 	for (int i = 0; i < uiPanels.size(); i++) {
-		uiPanels.at(i)->draw();
+		uiPanels[i]->draw();
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -889,7 +834,7 @@ void renderer::renderAll() {
 	glfwGetCursorPos(window, &mouseX, &mouseY);
 
 	// Projection matrix : Camera Field of View, right aspect ratio, display range : 0.1 unit <-> 100 units
-	glm::mat4 Projection = glm::perspective(renderer::camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+	glm::mat4 Projection = glm::perspective(renderer::camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 500.0f);
 
 	bool shiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT);
 	camera.Update(mouseX, mouseY, !shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), deltaTime);
@@ -907,7 +852,7 @@ void renderer::renderAll() {
 	if (spawnedBody != nullptr) {
 		MassBody* focusedBody = camera.focusedBody;
 		glm::vec3 mouseRay = CreateMouseRay();
-		glm::vec3 planeNormal = glm::normalize(camera.Position - focusedBody->position);
+		glm::vec3 planeNormal = glm::vec3(0, 1, 0); //glm::normalize(camera.Position - focusedBody->position); (uncomment if you don't want the spawn position to be contrainted to the horizontal plane)
 		glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);
 
 		glm::vec3 spawnVelocity = (planeIntersection - spawnedBody->position) * 0.5F;
@@ -937,13 +882,13 @@ void renderer::renderAll() {
 			// Step 2: update position
 			p += velocity * 0.5f;
 
-			renderModel(bodyLODModels[3], Projection, camera.ViewMatrix, glm::scale(glm::translate(glm::mat4(1), p), glm::vec3(0.05F)), COLOR_WHITE);
+			renderModel(*bodyLODModels[3], Projection, camera.ViewMatrix, glm::scale(glm::translate(glm::mat4(1), p), glm::vec3(0.05F)), COLOR_WHITE);
 		}
 	}
 
 	std::vector<MassBody*> bodies = *loadedUniverse->GetBodies();
 	for (unsigned int i = 0; i < bodies.size(); i++) {
-		renderBody(bodies.at(i), Projection);
+		renderBody(bodies[i], Projection);
 	}
 
 	if (spawnedBody != nullptr) {
@@ -1007,8 +952,11 @@ void renderer::renderAll() {
 }
 
 void renderer::terminate() {
-	delete[] bodyLODModels;
 	delete starSphereModel;
+
+	for (int i = 0; i < bodyLODModels.size(); i++) {
+		delete bodyLODModels[i];
+	}
 
 	glDeleteTextures(1, &ColorBufferTextureID);
 	glDeleteTextures(1, &EmissionBufferTextureID);
