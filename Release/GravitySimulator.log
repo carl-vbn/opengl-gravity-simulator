@@ -1,32 +1,34 @@
-﻿  renderer.cpp
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(137,69): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(514,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(515,38): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(515,30): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(523,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(523,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(531,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(531,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(539,21): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(539,13): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(559,20): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(689,21): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(755,14): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(762,23): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(773,24): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(773,15): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(778,24): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(778,15): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(818,20): warning C4018: '<': signed/unsigned mismatch
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(840,173): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(840,24): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(840,16): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-E:\Projects\OpenGL\GravitySimulator\src\rendering\renderer.cpp(957,20): warning C4018: '<': signed/unsigned mismatch
+﻿  main.cpp
+  sphere.cpp
+  star_sphere.cpp
+E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\star_sphere.cpp(69,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\rendering\baseModels\star_sphere.cpp(70,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  button.cpp
+  checkbox.cpp
+  font_renderer.cpp
+  label.cpp
+  panel.cpp
+  text_field.cpp
+  ui_manager.cpp
+  scene_loader.cpp
+E:\Projects\OpenGL\GravitySimulator\src\universe\scene_loader.cpp(16,16): warning C4244: 'initializing': conversion from 'std::streamoff' to 'size_t', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\universe\scene_loader.cpp(68,22): warning C4244: 'initializing': conversion from 'float' to 'unsigned char', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\universe\scene_loader.cpp(69,22): warning C4244: 'initializing': conversion from 'float' to 'unsigned char', possible loss of data
+E:\Projects\OpenGL\GravitySimulator\src\universe\scene_loader.cpp(70,22): warning C4244: 'initializing': conversion from 'float' to 'unsigned char', possible loss of data
+  cube.cpp
+  render_model.cpp
+  universe.cpp
+E:\Projects\OpenGL\GravitySimulator\src\universe\universe.cpp(7,30): warning C4305: '=': truncation from 'double' to 'float'
+E:\Projects\OpenGL\GravitySimulator\src\universe\universe.cpp(12,20): warning C4018: '<': signed/unsigned mismatch
+E:\Projects\OpenGL\GravitySimulator\src\universe\universe.cpp(23,20): warning C4018: '<': signed/unsigned mismatch
+E:\Projects\OpenGL\GravitySimulator\src\universe\universe.cpp(31,20): warning C4018: '<': signed/unsigned mismatch
+E:\Projects\OpenGL\GravitySimulator\src\universe\universe.cpp(34,21): warning C4018: '<': signed/unsigned mismatch
+  renderer.cpp
 LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Generating code
-  3 of 1220 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+  13 of 1221 functions ( 1.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    9 functions had inline decision re-evaluated but remain unchanged
+    14 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
 glew32s.lib(glew.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'glew32s.lib(glew.obj)' or at 'E:\Projects\OpenGL\GravitySimulator\Release\vc120.pdb'; linking object as if no debug info
   GravitySimulator.vcxproj -> E:\Projects\OpenGL\GravitySimulator\Release\GravitySimulator.exe

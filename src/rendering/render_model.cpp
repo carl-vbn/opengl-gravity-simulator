@@ -1,4 +1,4 @@
-#include "renderModel.h"
+#include "render_model.h"
 #include <iostream>
 
 const int RenderModel::GetVertexCount() {

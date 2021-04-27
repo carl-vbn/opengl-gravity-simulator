@@ -86,14 +86,14 @@ namespace renderer {
 		bool isOrbiting;
 		bool isBeingDragged;
 		int startMouseX, startMouseY;
-		int lastMouseX, lastMouseY;
+		double lastMouseX, lastMouseY;
 
 		// Stuff that is computed for every frame
-		glm::vec3 Position;
-		glm::vec3 RelativeOrbitPosition;
-		glm::vec3 FocusedPosition;
-		glm::mat4 ViewMatrix;
-		glm::mat4 StationaryViewMatrix; // View Matrix without any translation
+		glm::vec3 position;
+		glm::vec3 relativeOrbitPosition;
+		glm::vec3 focusedPosition;
+		glm::mat4 viewMatrix;
+		glm::mat4 stationaryViewMatrix; // View Matrix without any translation
 
 		// Things used to animate the camera going from one point to another
 		glm::vec3 previousPosition;
@@ -104,7 +104,7 @@ namespace renderer {
 		Camera();
 		Camera(glm::vec3 offset, glm::vec2 orbitAngles, float distance, float fov, float sensitivity);
 
-		void Update(int mouseX, int mouseY, bool orbiting, bool dragging, float deltaTime);
+		void Update(double mouseX, double mouseY, bool orbiting, bool dragging, float deltaTime);
 		void SetFocusedBody(MassBody* focusedBody);
 	};
 

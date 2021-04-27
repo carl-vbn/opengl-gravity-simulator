@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../renderModel.h"
+#include "../render_model.h"
 
 class Cube : public RenderModel
 {

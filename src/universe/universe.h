@@ -3,7 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-#include "../rendering/renderModel.h"
+#include "../rendering/render_model.h"
 #include "mass_body.h"
 
 #define MAX_OCCLUDERS 4

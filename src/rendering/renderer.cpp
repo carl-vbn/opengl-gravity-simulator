@@ -134,7 +134,7 @@ void abortSpawn() {
 }
 
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
-	renderer::camera.distance -= yoffset * renderer::camera.sensitivity;
+	renderer::camera.distance -= (float)yoffset * renderer::camera.sensitivity;
 	renderer::camera.distance = std::fmaxf(renderer::camera.distance, 2.0f);
 }
 
@@ -365,18 +365,25 @@ renderer::Camera::Camera(glm::vec3 offset, glm::vec2 orbitAngles, float distance
 	Camera::windowWidth = 1;
 	Camera::windowHeight = 1;
 
-	Camera::FocusedPosition = offset + deltaOffset;
-	Camera::RelativeOrbitPosition = glm::vec3(0, 0, 1.0F);
-	Camera::Position = FocusedPosition + RelativeOrbitPosition * distance;
+	Camera::focusedPosition = offset + deltaOffset;
+	Camera::relativeOrbitPosition = glm::vec3(0, 0, 1.0F);
+	Camera::position = focusedPosition + relativeOrbitPosition * distance;
+	Camera::previousPosition = position;
+	Camera::previousFocusedPosition = focusedPosition;
+	Camera::interpolating = false;
+	Camera::interpolationT = false;
+
+	Camera::viewMatrix = glm::mat4();
+	Camera::stationaryViewMatrix = glm::mat4();
 }
 
-renderer::Camera::Camera() {}
+renderer::Camera::Camera() : renderer::Camera::Camera(glm::vec3(0), glm::vec2(0), 0.0F, glm::radians(45.0f), 0.5f) {}
 
 // Handles all camera movement. Called every frame.
-void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool dragging, float deltaTime) {
-	FocusedPosition = ((focusedBody != nullptr) ? focusedBody->position : glm::vec3(0)) + offset + deltaOffset;
+void renderer::Camera::Update(double mouseX, double mouseY, bool orbiting, bool dragging, float deltaTime) {
+	focusedPosition = ((focusedBody != nullptr) ? focusedBody->position : glm::vec3(0)) + offset + deltaOffset;
 
-	glm::vec3 viewDir = glm::normalize(FocusedPosition - Position);
+	glm::vec3 viewDir = glm::normalize(focusedPosition - position);
 	glm::vec3 upVector = glm::vec3(0, 1, 0);
 	glm::vec3 rightVector = glm::cross(viewDir, upVector);
 
@@ -385,8 +392,8 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 		if (!Camera::isOrbiting) {
 			Camera::isOrbiting = true;
 
-			startMouseX = mouseX;
-			startMouseY = mouseY;
+			startMouseX = (int)mouseX;
+			startMouseY = (int)mouseY;
 			lastMouseX = mouseX;
 			lastMouseY = mouseY;
 		}
@@ -394,8 +401,8 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 		// Calculate the amount of rotation given the mouse movement.
 		float deltaAngleX = (glm::two_pi<float>() / windowWidth);
 		float deltaAngleY = (glm::two_pi<float>() / windowHeight);
-		float xAngle = (lastMouseX - mouseX) * deltaAngleX;
-		float yAngle = (lastMouseY - mouseY) * deltaAngleY;
+		float xAngle = (float)(lastMouseX - mouseX) * deltaAngleX;
+		float yAngle = (float)(lastMouseY - mouseY) * deltaAngleY;
 
 		// Extra step to handle the problem when the camera direction is the same as the up vector
 		float cosAngle = glm::dot(viewDir, upVector);
@@ -405,12 +412,12 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 		// Rotation on first axis
 		glm::mat4 rotationMatrixX(1.0f);
 		rotationMatrixX = glm::rotate(rotationMatrixX, xAngle, upVector);
-		RelativeOrbitPosition = (rotationMatrixX * glm::vec4(RelativeOrbitPosition, 1.0f));
+		relativeOrbitPosition = (rotationMatrixX * glm::vec4(relativeOrbitPosition, 1.0f));
 
 		// Rotation on second axis
 		glm::mat4 rotationMatrixY(1.0f);
 		rotationMatrixY = glm::rotate(rotationMatrixY, yAngle, rightVector);
-		RelativeOrbitPosition = (rotationMatrixY * glm::vec4(RelativeOrbitPosition, 1.0f));
+		relativeOrbitPosition = (rotationMatrixY * glm::vec4(relativeOrbitPosition, 1.0f));
 
 		lastMouseX = mouseX;
 		lastMouseY = mouseY;
@@ -419,11 +426,11 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 		Camera::isOrbiting = false;
 	}
 
-	Position = FocusedPosition + RelativeOrbitPosition * distance;
+	position = focusedPosition + relativeOrbitPosition * distance;
 
 	if (interpolating) {
-		Position = glm::mix(previousPosition, Position, interpolationT);
-		FocusedPosition = glm::mix(previousFocusedPosition, FocusedPosition, interpolationT);
+		position = glm::mix(previousPosition, position, interpolationT);
+		focusedPosition = glm::mix(previousFocusedPosition, focusedPosition, interpolationT);
 
 		interpolationT += deltaTime * 4.0f;
 		if (interpolationT >= 1) {
@@ -433,28 +440,28 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 	}
 
 	// Calculate view matrices (one with translation, one without that is used to render the background)
-	StationaryViewMatrix = glm::lookAt(
+	stationaryViewMatrix = glm::lookAt(
 		glm::vec3(0),
-		FocusedPosition - Position, // What to look at
+		focusedPosition - position, // What to look at
 		upVector
 	);
 
-	ViewMatrix = glm::lookAt(
-		Position, // Camera position
-		FocusedPosition, // What to look at
+	viewMatrix = glm::lookAt(
+		position, // Camera position
+		focusedPosition, // What to look at
 		upVector
 	);
 
 	if (dragging) {
 		if (!Camera::isBeingDragged) {
 			Camera::isBeingDragged = true;
-			startMouseX = mouseX;
-			startMouseY = mouseY;
+			startMouseX = (int)mouseX;
+			startMouseY = (int)mouseY;
 			lastMouseX = mouseX;
 			lastMouseY = mouseY;
 		}
 		else {
-			glm::mat4 iV = glm::inverse(ViewMatrix);
+			glm::mat4 iV = glm::inverse(viewMatrix);
 			glm::vec3 horizontalAxis = iV * glm::vec4(-1, 0, 0, 0);
 			glm::vec3 verticalAxis = iV * glm::vec4(0, 1, 0, 0);
 
@@ -470,8 +477,8 @@ void renderer::Camera::Update(int mouseX, int mouseY, bool orbiting, bool draggi
 
 void renderer::Camera::SetFocusedBody(MassBody* focusedBody) {
 	this->focusedBody = focusedBody;
-	this->previousPosition = camera.Position;
-	this->previousFocusedPosition = camera.FocusedPosition;
+	this->previousPosition = camera.position;
+	this->previousFocusedPosition = camera.focusedPosition;
 	this->interpolating = true;
 	this->interpolationT = 0;
 	this->offset = glm::vec3(0);
@@ -511,8 +518,8 @@ void renderer::postRender(double deltaTime) {
 	mouseY = -(mouseY / windowHeight * 2 - 1);
 
 	if (mouseX != previousMouseX || mouseY != previousMouseY) {
-		for (int i = 0; i < uiPanels.size(); i++) {
-			uiPanels[i]->onMouseMoved(mouseX, mouseY);
+		for (unsigned int i = 0; i < uiPanels.size(); i++) {
+			uiPanels[i]->onMouseMoved((float)mouseX, (float)mouseY);
 		}
 
 		previousMouseX = mouseX;
@@ -520,7 +527,7 @@ void renderer::postRender(double deltaTime) {
 	}
 
 	if (leftBtnState && !leftMouseButtonPressed) {
-		mouseDown(mouseX, mouseY, GLFW_MOUSE_BUTTON_LEFT);
+		mouseDown((float)mouseX, (float)mouseY, GLFW_MOUSE_BUTTON_LEFT);
 		leftMouseButtonPressed = true;
 	}
 	else if (!leftBtnState && leftMouseButtonPressed) {
@@ -528,7 +535,7 @@ void renderer::postRender(double deltaTime) {
 	}
 
 	if (rightBtnState && !rightMouseButtonPressed) {
-		mouseDown(mouseX, mouseY, GLFW_MOUSE_BUTTON_RIGHT);
+		mouseDown((float)mouseX, (float)mouseY, GLFW_MOUSE_BUTTON_RIGHT);
 		rightMouseButtonPressed = true;
 	}
 	else if (!rightBtnState && rightMouseButtonPressed) {
@@ -536,7 +543,7 @@ void renderer::postRender(double deltaTime) {
 	}
 
 	if (middleBtnState && !middleMouseButtonPressed) {
-		mouseDown(mouseX, mouseY, GLFW_MOUSE_BUTTON_MIDDLE);
+		mouseDown((float)mouseX, (float)mouseY, GLFW_MOUSE_BUTTON_MIDDLE);
 		middleMouseButtonPressed = true;
 	}
 	else if (!middleBtnState && middleMouseButtonPressed) {
@@ -556,7 +563,7 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 		absorbed = true;
 	}
 
-	for (int i = 0; i < uiPanels.size(); i++) {
+	for (unsigned int i = 0; i < uiPanels.size(); i++) {
 		if (uiPanels[i]->GetBounds().Contains(mouseX, mouseY)) {
 			uiPanels[i]->onMouseDown(mouseX, mouseY, button);
 			absorbed = true;
@@ -568,7 +575,7 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 	if (!absorbed) {
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			if (spawnedBody == nullptr) {
-				Universe::RaycastHit hitResult = loadedUniverse->Raycast(camera.Position, CreateMouseRay());
+				Universe::RaycastHit hitResult = loadedUniverse->Raycast(camera.position, CreateMouseRay());
 				if (hitResult.hit) {
 					camera.SetFocusedBody(hitResult.hitBody);
 				}
@@ -580,13 +587,13 @@ void renderer::mouseDown(float mouseX, float mouseY, int button) { // mouseX and
 		else if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			MassBody* focusedBody = camera.focusedBody;
 			glm::vec3 mouseRay = CreateMouseRay();
-			glm::vec3 planeNormal = glm::vec3(0, 1, 0); //glm::normalize(camera.Position - focusedBody->position); (uncomment if you don't want the spawn position to be contrainted to the horizontal plane)
-			glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);
+			glm::vec3 planeNormal = glm::vec3(0, 1, 0); //glm::normalize(camera.position - focusedBody->position); (uncomment if you don't want the spawn position to be contrainted to the horizontal plane)
+			glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.position, mouseRay);
 			if (spawnedBody == nullptr) {
 				spawnedBody = new MassBody(planeIntersection, focusedBody->mass * 0.1F, focusedBody->radius * 0.1F, Color((unsigned int)(std::rand()/(float)RAND_MAX*0xFFFFFF)));
 				
 				// Discretely focus the new body
-				camera.offset = glm::vec3(camera.FocusedPosition - spawnedBody->position);
+				camera.offset = glm::vec3(camera.focusedPosition - spawnedBody->position);
 				camera.focusedBody = spawnedBody;
 				
 				ui::showBodyProperties(spawnedBody, "Spawned body");
@@ -618,7 +625,7 @@ glm::vec3 renderer::CreateMouseRay() {
 	mouseY = mouseY / (windowHeight * 0.5) - 1.0;
 
 	glm::mat4 proj = glm::perspective(camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 500.0f);
-	glm::mat4 view = camera.StationaryViewMatrix;
+	glm::mat4 view = camera.stationaryViewMatrix;
 
 	glm::mat4 invVP = glm::inverse(proj * view);
 	glm::vec4 screenPos = glm::vec4(mouseX, -mouseY, 1.0f, 1.0f);
@@ -686,16 +693,16 @@ void renderer::renderBody(MassBody* body, glm::mat4 projectionMatrix) {
 	}
 	else {
 		glUniform1i(shader.OccluderCountUniformID, body->occluders.size());
-		for (int i = 0; i < body->occluders.size(); i++) {
+		for (unsigned int i = 0; i < body->occluders.size(); i++) {
 			MassBody* occluder = body->occluders[i];
 			glUniform3f(shader.OccluderPositionsUniformIDs[i], occluder->position.x, occluder->position.y, occluder->position.z);
 			glUniform1f(shader.OccluderRadiusesUniformIDs[i], occluder->radius);
 		}
 	}
 
-	float distanceFromCamera = glm::distance(camera.Position, body->position) - body->radius;
+	float distanceFromCamera = glm::distance(camera.position, body->position) - body->radius;
 
-	renderModel(*bodyLODModels[(int)fminf(fmaxf(distanceFromCamera / (body->radius * 8.0f), 0.0f), 3.0f)], projectionMatrix, camera.ViewMatrix, modelMatrix, body->color); // The weird looking formula is for choosing the right LOD model based on distance from camera and radius. I just tried different configurations out to try to find the right balance.
+	renderModel(*bodyLODModels[(int)fminf(fmaxf(distanceFromCamera / (body->radius * 8.0f), 0.0f), 3.0f)], projectionMatrix, camera.viewMatrix, modelMatrix, body->color); // The weird looking formula is for choosing the right LOD model based on distance from camera and radius. I just tried different configurations out to try to find the right balance.
 
 	if (isEmissive) {
 		glUniform1i(shader.UnlitUniformID, 0);
@@ -708,7 +715,7 @@ void renderer::renderBody(MassBody* body, glm::mat4 projectionMatrix) {
 
 // Requires the starShader
 void renderer::renderStars(glm::mat4 projectionMatrix) {
-	glm::mat4 viewMatrix = camera.StationaryViewMatrix;
+	glm::mat4 viewMatrix = camera.stationaryViewMatrix;
 
 	// Our ModelViewProjection : multiplication of our 3 matrices
 	glm::mat4 mvp = projectionMatrix * viewMatrix; // Remember, matrix multiplication is the other way around
@@ -751,14 +758,14 @@ void renderer::renderGrid(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 	glLineWidth(3);
 	glUniform3f(shader.ModelColorUniformID, 1.0f, 0.0f, 0.0f);
 	glBegin(GL_LINE_STRIP);
-	for (int j = -1000; j <= 1000; j += 100) {
+	for (float j = -1000; j <= 1000; j += 100) {
 		glVertex3f(j, 0.0f, 0.0f);
 	}
 	glEnd();
 
 	glUniform3f(shader.ModelColorUniformID, 0.0f, 0.0f, 1.0f);
 	glBegin(GL_LINE_STRIP);
-	for (int j = -1000; j <= 1000; j += 100) {
+	for (float j = -1000; j <= 1000; j += 100) {
 		glVertex3f(0, 0.0f, j);
 	}
 	glEnd();
@@ -768,13 +775,13 @@ void renderer::renderGrid(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 	glLineWidth(1);
 	glUniform3f(shader.ModelColorUniformID, 1.0f, 1.0f, 1.0f);
 	glBegin(GL_LINE_STRIP);
-	for (int i = -1000; i <= 1000; i += 10) {
-		for (int j = -1000; j <= 1000; j += 100) {
+	for (float i = -1000; i <= 1000; i += 10) {
+		for (float j = -1000; j <= 1000; j += 100) {
 			glVertex3f(i, 0.0f, j);
 		}
 		glPrimitiveRestartNV();
 
-		for (int j = -1000; j <= 1000; j += 100) {
+		for (float j = -1000; j <= 1000; j += 100) {
 			glVertex3f(j, 0.0f, i);
 		}
 		glPrimitiveRestartNV();
@@ -785,7 +792,7 @@ void renderer::renderGrid(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 // Requires the overlayShader
 void renderer::renderFocusOverlay(glm::mat4 projectionMatrix) {
 	MassBody* focusedBody = camera.focusedBody;
-	glm::mat4 viewMatrix = camera.ViewMatrix;
+	glm::mat4 viewMatrix = camera.viewMatrix;
 
 	// http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/billboards/
 	glUniform3f(overlayShader.CamRightUniformID, viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
@@ -815,7 +822,7 @@ void renderer::renderUI() {
 	// Disable depth test as the draw order should determine what fragments are above each other
 	glDisable(GL_DEPTH_TEST);
 
-	for (int i = 0; i < uiPanels.size(); i++) {
+	for (unsigned int i = 0; i < uiPanels.size(); i++) {
 		uiPanels[i]->draw();
 	}
 
@@ -834,26 +841,26 @@ void renderer::renderAll() {
 	glfwGetCursorPos(window, &mouseX, &mouseY);
 
 	// Projection matrix : Camera Field of View, right aspect ratio, display range : 0.1 unit <-> 100 units
-	glm::mat4 Projection = glm::perspective(renderer::camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 500.0f);
+	glm::mat4 projectionMatrix = glm::perspective(renderer::camera.fov, (float)windowWidth / (float)windowHeight, 0.1f, 500.0f);
 
 	bool shiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT);
-	camera.Update(mouseX, mouseY, !shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), deltaTime);
+	camera.Update(mouseX, mouseY, !shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), shiftPressed && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE), (float)deltaTime);
 
 	glEnable(GL_DEPTH_TEST);
 	glUseProgram(starShader.ProgramID);
-	renderStars(Projection);
+	renderStars(projectionMatrix);
 	glClear(GL_DEPTH_BUFFER_BIT); // Clear the depth buffer so that the star sphere will be ignored in depth testing
 
 	glUseProgram(shader.ProgramID);
 	glUniform1i(shader.UnlitUniformID, 1);
-	renderGrid(Projection, camera.ViewMatrix);
+	renderGrid(projectionMatrix, camera.viewMatrix);
 
 	// Render the path of the spawned object
 	if (spawnedBody != nullptr) {
 		MassBody* focusedBody = camera.focusedBody;
 		glm::vec3 mouseRay = CreateMouseRay();
-		glm::vec3 planeNormal = glm::vec3(0, 1, 0); //glm::normalize(camera.Position - focusedBody->position); (uncomment if you don't want the spawn position to be contrainted to the horizontal plane)
-		glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.Position, mouseRay);
+		glm::vec3 planeNormal = glm::vec3(0, 1, 0); //glm::normalize(camera.position - focusedBody->position); (uncomment if you don't want the spawn position to be contrainted to the horizontal plane)
+		glm::vec3 planeIntersection = PlaneIntersection(focusedBody->position, planeNormal, camera.position, mouseRay);
 
 		glm::vec3 spawnVelocity = (planeIntersection - spawnedBody->position) * 0.5F;
 
@@ -882,17 +889,17 @@ void renderer::renderAll() {
 			// Step 2: update position
 			p += velocity * 0.5f;
 
-			renderModel(*bodyLODModels[3], Projection, camera.ViewMatrix, glm::scale(glm::translate(glm::mat4(1), p), glm::vec3(0.05F)), COLOR_WHITE);
+			renderModel(*bodyLODModels[3], projectionMatrix, camera.viewMatrix, glm::scale(glm::translate(glm::mat4(1), p), glm::vec3(0.05F)), COLOR_WHITE);
 		}
 	}
 
 	std::vector<MassBody*> bodies = *loadedUniverse->GetBodies();
 	for (unsigned int i = 0; i < bodies.size(); i++) {
-		renderBody(bodies[i], Projection);
+		renderBody(bodies[i], projectionMatrix);
 	}
 
 	if (spawnedBody != nullptr) {
-		renderBody(spawnedBody, Projection);
+		renderBody(spawnedBody, projectionMatrix);
 	}
 
 	glDisable(GL_DEPTH_TEST); // No depth test required from here on as we won't be rendering any 3D stuff
@@ -934,7 +941,7 @@ void renderer::renderAll() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glUseProgram(overlayShader.ProgramID);
-	renderFocusOverlay(Projection);
+	renderFocusOverlay(projectionMatrix);
 
 	glUseProgram(uiShader.ProgramID);
 	renderUI();
@@ -954,7 +961,7 @@ void renderer::renderAll() {
 void renderer::terminate() {
 	delete starSphereModel;
 
-	for (int i = 0; i < bodyLODModels.size(); i++) {
+	for (unsigned int i = 0; i < bodyLODModels.size(); i++) {
 		delete bodyLODModels[i];
 	}
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "../renderModel.h"
+#include "../render_model.h"
 #include <vector>
 #include <glm/gtc/matrix_transform.hpp>
 

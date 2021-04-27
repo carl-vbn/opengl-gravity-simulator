@@ -24,7 +24,7 @@ namespace ui {
 		float cellHeight = bounds.GetHeight() / (totalVerticalCellSize + 1); // We add 1 to make up for the panel head
 		float yOffset = bounds.yMax - cellHeight;
 
-		for (int i = 0; i < containers.size(); i++) {
+		for (unsigned int i = 0; i < containers.size(); i++) {
 			Container* container = &containers.at(i);
 			Rectangle containerBounds = Rectangle(bounds.xMin, yOffset - container->GetVerticalCellSize() * cellHeight, bounds.xMax, yOffset);
 			if (containerBounds.Contains(x, y)) {
@@ -61,10 +61,10 @@ namespace ui {
 		glVertex2f(bounds.xMax, bounds.yMax - cellHeight);
 		glEnd();
 
-		fontRendering::drawText(label, (bounds.xMin + bounds.xMax) / 2, (2 * bounds.yMax - cellHeight) / 2, bounds.GetWidth() * 0.5, PANEL_TITLE_COLOR, true, true);
+		fontRendering::drawText(label, (bounds.xMin + bounds.xMax) / 2, (2 * bounds.yMax - cellHeight) / 2, bounds.GetWidth() * 0.5F, PANEL_TITLE_COLOR, true, true);
 
 		float yOffset = bounds.yMax - cellHeight;
-		for (int i = 0; i < containers.size(); i++) {
+		for (unsigned int i = 0; i < containers.size(); i++) {
 			Container* container = &containers.at(i);
 			container->draw(Rectangle(bounds.xMin, yOffset - container->GetVerticalCellSize() * cellHeight, bounds.xMax, yOffset));
 			yOffset -= container->GetVerticalCellSize() * cellHeight;
@@ -83,7 +83,7 @@ namespace ui {
 		float cellHeight = bounds.GetHeight() / (totalVerticalCellSize + 1); // We add 1 to make up for the panel head
 		float yOffset = bounds.yMax - cellHeight;
 
-		for (int i = 0; i < containers.size(); i++) {
+		for (unsigned int i = 0; i < containers.size(); i++) {
 			Container* container = &containers.at(i);
 			Rectangle containerBounds = Rectangle(bounds.xMin, yOffset - container->GetVerticalCellSize() * cellHeight, bounds.xMax, yOffset);
 			container->onMouseMoved(containerBounds, mouseX, mouseY);
