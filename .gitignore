@@ -6,6 +6,7 @@
 *.lo
 *.o
 *.obj
+*.iobj
 
 # Precompiled Headers
 *.gch
@@ -19,6 +20,20 @@
 # Fortran module files
 *.mod
 *.smod
+
+# Debug builds
+Debug/
+
+# Logs
+*.log
+GravitySimulator.tlog/
+
+# System specific files
+*.FileListAbsolute.txt
+*.recipe
+*.pdb
+*.ipdb
+
 
 # Visual Studio stuff
 .vs/

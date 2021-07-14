@@ -4,7 +4,8 @@
 
 in vec4 interpolatedVertexColor;
 in vec2 uv;
-out vec4 color;
+layout(location = 0) out vec4 color;
+layout(location = 1) out vec3 emission;
 
 uniform bool UseTexture;
 uniform sampler2D textureData;
@@ -16,4 +17,6 @@ void main() {
     else {
         color = interpolatedVertexColor;
     }
+
+    emission = vec3(0);
 }

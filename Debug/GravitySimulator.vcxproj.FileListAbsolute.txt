@@ -1,2 +1,0 @@
-E:\Projects\OpenGL\GravitySimulator\Debug\GravitySimulator.exe
-E:\Projects\OpenGL\GravitySimulator\Debug\GravitySimulator.pdb

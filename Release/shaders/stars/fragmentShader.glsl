@@ -7,9 +7,9 @@ in vec3 Normal_cameraspace;
 in vec2 uv;
 
 // Ouput data
-out vec3 color;
+layout(location = 0) out vec3 color;
+layout(location = 1) out vec3 emission;
 
-uniform sampler2D skyboxTexture;
 
 float rand(vec2 co) {
     return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
@@ -29,4 +29,5 @@ void main() {
     b = clamp(b, 0, 1);
 
     color = vec3(b, b, b);
+    emission = vec3(0);
 }

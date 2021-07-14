@@ -63,7 +63,6 @@ void Universe::SetEmissiveBody(unsigned int index) {
 
 	// Re-assign occluders
 	AssignOccluders();
-
 }
 
 unsigned int Universe::GetEmissiveBodyIndex() {
